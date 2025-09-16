@@ -1,0 +1,11 @@
+# Python
+venv/
+*.pyc
+__pycache__/
+
+# Credentials
+looker.ini
+service-account.json
+
+# Streamlit
+.streamlit/';.,'
