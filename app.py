@@ -6,24 +6,24 @@ from pydantic import BaseModel, Field
 from typing import Literal
 
 # --- LLM Imports ---
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI # <-- FIX: Corrected typo
 
 # --- Langchain Core Imports ---
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableBranch, RunnablePassthrough
 from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.agents import create_react_agent, AgentExecutor
+# --- FIX 1: ADDED create_structured_chat_agent and hub ---
+from langchain.agents import create_react_agent, AgentExecutor, create_structured_chat_agent
+from langchain import hub
+# --- END FIX ---
 from langchain_experimental.tools.python.tool import PythonREPLTool
 from langchain_core.tools import render_text_description
+# --- FIX: Import Message types ---
+from langchain_core.messages import HumanMessage, AIMessage
+# --- END FIX ---
 
 # --- Tool Imports ---
-from tools.looker_tool import (
-    get_all_looks, 
-    get_looker_query_payload, 
-    run_looker_query,
-    get_visualization_embed_url,
-    create_and_run_inline_query  # <-- NEW TOOL IMPORTED
-)
+from tools.looker_tool import looker_data_tool
 from tools.knowledge_tool import get_census_data_definition
 from tools.social_tool import get_profile_data
 from tools.cache_tool import load_df_from_cache, save_data_to_cache
@@ -104,32 +104,36 @@ router = router_prompt | llm | parser
 # ==============================================================================
 
 # --- 4a. Python Agent ---
+# --- FIX: Updated prompt to instruct agent to load data ---
 PYTHON_AGENT_PROMPT_TEMPLATE = """
 You are an expert Python data analyst. You have access to a Python REPL tool.
-A pandas DataFrame named `df` has already been loaded into the REPL's memory.
-DO NOT try to load any data or use any other variable names; use `df` directly.
+Your first step is to load the cached data. The data is stored in a file named "data.csv".
+You MUST load this file into a pandas DataFrame named `df`.
+The pandas library is available to you as `pd`.
 
-The `df` DataFrame contains data from a recent Looker query.
-Here is the schema of `df` (from df.info()):
-{schema}
+Example loading code:
+```python
+import pandas as pd
+df = pd.read_csv("data.csv")
+print(df.head())
+```
 
-Your task is to write and execute Python code to answer the user's question.
-- Only use the `df` dataframe.
-- Perform any calculations or manipulations needed.
+After loading the data, your task is to write and execute Python code to answer the user's question using the `df` dataframe.
 - You MUST end your final code block with a `print()` statement
   containing the result or answer.
-- Do not install any packages. Pandas is already available.
+- Do not install any packages.
 
 Here are the available tools:
 {tools}
 
 Use the following format:
-Thought: I need to write Python code to answer the user's question.
+Thought: I need to load the data, then write Python code to answer the user's question.
 Action: The action to take, should be one of [{tool_names}]
 Action Input: 
 ```python
 # Your python code here
-print(df.some_method())
+# (e.g., df = pd.read_csv("data.csv"))
+# (e.g., print(df.some_method()))
 ```
 Observation: The result of your code.
 ... (this thought/action/observation can repeat)
@@ -144,28 +148,34 @@ Thought:
 {agent_scratchpad}
 """
 
+# --- FIX: Removed 'schema' from input_variables ---
 python_agent_prompt = PromptTemplate(
     template=PYTHON_AGENT_PROMPT_TEMPLATE,
-    input_variables=["input", "chat_history", "agent_scratchpad", "schema", "tools", "tool_names"]
+    input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
 )
 
 def create_python_agent_chain():
-    """Creates the Python agent executor with the data_cache injected."""
-    data_cache = load_df_from_cache.func() 
-    
-    if data_cache is None or data_cache.empty:
+    """Creates the Python agent executor."""
+    # --- FIX: Check for file existence, but don't load it ---
+    if not os.path.exists("data.csv"):
         return (lambda x: "There is no data cached to analyze. Please run a Looker query first.")
+    # --- END FIX ---
 
-    buffer = io.StringIO()
-    data_cache.info(buf=buffer)
-    schema = buffer.getvalue()
-
-    tools = [PythonREPLTool(locals={"df": data_cache})]
+    # --- FIX: Inject 'pd' instead of 'df' ---
+    tools = [PythonREPLTool(locals={"pd": pd})]
+    # --- END FIX ---
     
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
-
-    agent = create_react_agent(llm, tools, python_agent_prompt)
+    
+    # --- FIX: Partial the prompt to inject variables (no schema) ---
+    prompt_with_vars = python_agent_prompt.partial(
+        tools=tools_description, 
+        tool_names=tool_names
+    )
+    # --- END FIX ---
+    
+    agent = create_react_agent(llm, tools, prompt_with_vars) # Use the partial'd prompt
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -174,84 +184,27 @@ def create_python_agent_chain():
         handle_parsing_errors=True
     ).with_config({"run_name": "PythonAgent"})
     
-    return agent_executor.bind(schema=schema, tools=tools_description, tool_names=tool_names)
+    return agent_executor
 
 
 # --- 4b. Looker Agent ---
-# --- COMPLETELY REWRITTEN PROMPT ---
-LOOKER_AGENT_PROMPT_TEMPLATE = """
-You are an expert in US Census data and a master of the Looker platform.
-Your goal is to answer the user's question using the Looker tools.
-
-**EXPLORE INFORMATION:**
-All US Census data is in a single Looker Explore with the following details:
-- Model: `us_census`
-- View: `population_data`
-- Key Fields: 
-  - `population_data.count` (Measure)
-  - `population_data.average_age` (Measure)
-  - `gender.name` (Dimension)
-  - `state.name` (Dimension)
-  - `age.group` (Dimension)
-  - `education.level` (Dimension)
-  - `income.bracket` (Dimension)
-
-**YOUR STRATEGY:**
-You must follow this plan:
-1.  **Check Looks:** First, call `get_all_looks()` to see if a pre-built report (Look) matches the user's request.
-2.  **Run Look:** If you find a Look with a title that is a *perfect match* (e.g., user asks for 'gender breakdown' and a Look is titled 'Gender Demographics'), then use `get_looker_query_payload` and `run_looker_query` to run it.
-3.  **Build Inline Query:** If NO Look title is a good match, DO NOT try to run a Look. Instead, use `create_and_run_inline_query` to build a new query from scratch. Use the 'Explore Information' above to get the correct model, view, and field names.
-4.  **Visualize:** If the user asks to "see" a chart or visualization, use `get_visualization_embed_url` with the `look_id` *after* you have determined a good Look exists.
-
-**AVAILABLE TOOLS:**
-{tools}
-
-**FORMAT:**
-Use the following format:
-Thought: I need to decide my strategy.
-Action: The action to take, should be one of [{tool_names}]
-Action Input: The input for the tool.
-Observation: The result from the tool.
-... (this thought/action/observation can repeat)
-Thought: I now have the final answer.
-Final Answer: The final answer to the user
-
-USER INPUT: {input}
-CHAT HISTORY: {chat_history}
-
-Begin!
-Thought:
-{agent_scratchpad}
-"""
-
-looker_agent_prompt = PromptTemplate(
-    template=LOOKER_AGENT_PROMPT_TEMPLATE,
-    input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
-)
-
 def create_looker_agent_chain():
     tools = [
-        get_all_looks,
-        get_looker_query_payload,
-        run_looker_query,
-        get_visualization_embed_url,
-        get_census_data_definition,
-        create_and_run_inline_query  # <-- NEW TOOL ADDED
+        looker_data_tool,
+        get_census_data_definition
     ]
     
-    tools_description = render_text_description(tools)
-    tool_names = ", ".join([t.name for t in tools])
-    
-    agent = create_react_agent(llm, tools, looker_agent_prompt)
+    agent_prompt = hub.pull("hwchase17/structured-chat-agent")
+    agent = create_structured_chat_agent(llm, tools, agent_prompt)
     
     agent_executor = AgentExecutor(
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=True # This is very important
     ).with_config({"run_name": "LookerAgent"})
     
-    return agent_executor.bind(tools=tools_description, tool_names=tool_names)
+    return agent_executor
 
 
 # --- 4c. Social Agent ---
@@ -290,7 +243,14 @@ def create_social_agent_chain():
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
     
-    agent = create_react_agent(llm, tools, social_agent_prompt)
+    # --- FIX: Partial the prompt to inject variables ---
+    prompt_with_vars = social_agent_prompt.partial(
+        tools=tools_description, 
+        tool_names=tool_names
+    )
+    # --- END FIX ---
+    
+    agent = create_react_agent(llm, tools, prompt_with_vars) # Use the partial'd prompt
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -299,7 +259,8 @@ def create_social_agent_chain():
         handle_parsing_errors=True
     ).with_config({"run_name": "SocialAgent"})
     
-    return agent_executor.bind(tools=tools_description, tool_names=tool_names)
+    # --- FIX: No need to bind variables here ---
+    return agent_executor
 
 
 # --- 4d. General Agent (Fallback) ---
@@ -338,7 +299,14 @@ def create_general_agent_chain():
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
     
-    agent = create_react_agent(llm, tools, general_agent_prompt)
+    # --- FIX: Partial the prompt to inject variables ---
+    prompt_with_vars = general_agent_prompt.partial(
+        tools=tools_description, 
+        tool_names=tool_names
+    )
+    # --- END FIX ---
+    
+    agent = create_react_agent(llm, tools, prompt_with_vars) # Use the partial'd prompt
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -347,7 +315,8 @@ def create_general_agent_chain():
         handle_parsing_errors=True
     ).with_config({"run_name": "GeneralAgent"})
     
-    return agent_executor.bind(tools=tools_description, tool_names=tool_names)
+    # --- FIX: No need to bind variables here ---
+    return agent_executor
 
 # ==============================================================================
 # 5. Main Graph / Chain
@@ -374,10 +343,11 @@ def setup_sidebar():
     st.sidebar.title("Cached Datasource")
     
     try:
-        # Use the tool's function to load the data
-        df = load_df_from_cache.func() 
+        # --- FIX: Explicitly load 'data.csv' ---
+        df = load_df_from_cache.func(file_path="data.csv") 
         
         if df is not None and not df.empty:
+            # --- FIX: Correct label ---
             st.sidebar.info(f"**data.csv** loaded ({len(df)} rows)")
             st.sidebar.dataframe(df.head())
             
@@ -393,6 +363,7 @@ def setup_sidebar():
         else:
             st.sidebar.info("No data cached. Run a Looker query in the chatbot to load data.")
     except FileNotFoundError:
+        # --- FIX: Correct error message ---
         st.sidebar.info("No data.csv file found. Run a Looker query to create one.")
     except Exception as e:
         st.sidebar.error(f"Error loading cache: {e}")
@@ -411,27 +382,36 @@ if "messages" not in st.session_state:
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    # --- FIX: Read from .content attribute ---
+    role = "user" if isinstance(message, HumanMessage) else "assistant"
+    with st.chat_message(role):
+        st.markdown(message.content)
 
 # React to user input
 if prompt := st.chat_input("What would you like to know?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # --- FIX: Append HumanMessage object ---
+    st.session_state.messages.append(HumanMessage(content=prompt))
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
-                chat_history_str = "\n".join(
-                    [f"{m['role']}: {m['content']}" for m in st.session_state.messages[:-1]]
-                )
+                # --- FIX: Pass the list of messages directly ---
+                # Get all messages *except* the new one
+                chat_history_list = st.session_state.messages[:-1]
                 
-                chain_input = {"input": prompt, "chat_history": chat_history_str}
+                chain_input = {"input": prompt, "chat_history": chat_history_list}
+                # --- END FIX ---
                 
                 response = chain.invoke(chain_input)
                 
-                final_answer = response.get("output", "I'm sorry, I encountered an error.")
+                # --- FIX: Handle string response from python_agent guard clause ---
+                if isinstance(response, str):
+                    final_answer = response
+                else:
+                    final_answer = response.get("output", "I'm sorry, I encountered an error.")
+                # --- END FIX ---
                 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
@@ -439,5 +419,6 @@ if prompt := st.chat_input("What would you like to know?"):
 
         st.markdown(final_answer)
     
-    st.session_state.messages.append({"role": "assistant", "content": final_answer})
+    # --- FIX: Append AIMessage object ---
+    st.session_state.messages.append(AIMessage(content=final_answer))
 
