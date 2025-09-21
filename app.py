@@ -4,6 +4,7 @@ import io
 import os
 from pydantic import BaseModel, Field
 from typing import Literal
+import json # <-- ADDED IMPORT
 
 # --- LLM Imports ---
 from langchain_google_genai import ChatGoogleGenerativeAI # <-- FIX: Corrected typo
@@ -329,10 +330,11 @@ branch = RunnableBranch(
     create_general_agent_chain() 
 )
 
-chain = (
-    RunnablePassthrough.assign(route=router)
-    | branch
-)
+# --- MODIFIED: The router is now run *before* the branch in the UI section ---
+# chain = (
+#     RunnablePassthrough.assign(route=router)
+#     | branch
+# )
 
 # ==============================================================================
 # 6. Streamlit UI
@@ -386,6 +388,9 @@ for message in st.session_state.messages:
     role = "user" if isinstance(message, HumanMessage) else "assistant"
     with st.chat_message(role):
         st.markdown(message.content)
+        # --- MODIFICATION: Check if viz_url is in history and display ---
+        # This part is complex, let's skip for now to avoid saving complex objects.
+        # The user will just see the text on rerun, which is fine.
 
 # React to user input
 if prompt := st.chat_input("What would you like to know?"):
@@ -396,15 +401,23 @@ if prompt := st.chat_input("What would you like to know?"):
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
+            
+            final_answer = ""
+            viz_url = None # Variable to hold the URL
+            
             try:
                 # --- FIX: Pass the list of messages directly ---
                 # Get all messages *except* the new one
                 chat_history_list = st.session_state.messages[:-1]
                 
                 chain_input = {"input": prompt, "chat_history": chat_history_list}
-                # --- END FIX ---
                 
-                response = chain.invoke(chain_input)
+                # --- MODIFICATION: Run router first to check destination ---
+                route = router.invoke(chain_input)
+                chain_input["route"] = route
+                
+                response = branch.invoke(chain_input)
+                # --- END MODIFICATION ---
                 
                 # --- FIX: Handle string response from python_agent guard clause ---
                 if isinstance(response, str):
@@ -413,12 +426,35 @@ if prompt := st.chat_input("What would you like to know?"):
                     final_answer = response.get("output", "I'm sorry, I encountered an error.")
                 # --- END FIX ---
                 
+                # --- NEW IFRAME LOGIC ---
+                if (route and route.destination == 'looker' and
+                    response.get("intermediate_steps") and
+                    len(response["intermediate_steps"]) > 0):
+                    
+                    # Get the last tool call's observation
+                    last_step = response["intermediate_steps"][-1]
+                    observation = last_step[1] # This is the JSON string from looker_tool
+                    
+                    if isinstance(observation, str):
+                        try:
+                            obs_json = json.loads(observation)
+                            viz_url = obs_json.get("viz_url")
+                        except (json.JSONDecodeError, AttributeError) as e:
+                            # This is a soft fail, so we just print to console
+                            print(f"Could not parse viz_url from observation: {e}")
+                # --- END NEW LOGIC ---
+                
             except Exception as e:
                 st.error(f"An error occurred: {e}")
                 final_answer = "I'm sorry, I'm having trouble processing that request."
 
+        # --- MODIFIED: Render text and iframe separately ---
         st.markdown(final_answer)
+        
+        if viz_url:
+            st.iframe(viz_url, height=500, scrolling=True)
+        # --- END MODIFICATION ---
     
-    # --- FIX: Append AIMessage object ---
+    # --- FIX: Append AIMessage object (only text) ---
     st.session_state.messages.append(AIMessage(content=final_answer))
 
