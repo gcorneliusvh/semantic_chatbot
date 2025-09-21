@@ -1,33 +1,44 @@
-from langchain_google_vertexai import ChatVertexAI
-from google.cloud.aiplatform_v1beta1.types import Tool as VertexTool
-from langchain.tools import Tool
+import json
+from langchain_core.tools import tool
 
-# 1. Create the base LLM for THIS TOOL ONLY
-base_llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
+# --- Pydantic Import ---
+from pydantic import BaseModel, Field
 
-# 2. Create and bind the Google Search tool to THIS LLM
-google_search_tool = VertexTool(google_search={})
-llm_with_search = base_llm.bind_tools([google_search_tool])
+# ==============================================================================
+# Pydantic Input Schemas
+# ==============================================================================
 
-# 3. This tool's function just calls the grounded LLM
-def _run_general_knowledge(query: str) -> str:
-    """Runs the query against the grounded Gemini model."""
-    print(f"--- Calling Grounded Knowledge Tool for: {query} ---")
+class TermInput(BaseModel):
+    term: str = Field(description="The census term to define, e.g., 'poverty line' or 'median income'.")
+
+# ==============================================================================
+# Tool Definitions
+# ==============================================================================
+
+@tool(args_schema=TermInput)
+def get_census_data_definition(term: str) -> str:
+    """
+    Looks up the definition for a specific US Census term from the metadata file.
+    Use this to answer questions like 'What is the poverty line?' or 'Define median income'.
+    
+    Args:
+        term: The census term to define, e.g., 'poverty line' or 'median income'.
+    """
     try:
-        # We simply invoke the LLM that has search built-in
-        response = llm_with_search.invoke(query)
-        return response.content
+        with open('acs_census_metadata.json', 'r') as f:
+            metadata = json.load(f)
+        
+        # Simple case-insensitive search
+        search_term = term.lower().strip()
+        
+        for key, value in metadata.items():
+            if search_term in key.lower() or (value and search_term in value.lower()):
+                return f"Definition for '{key}': {value}"
+                
+        return f"Sorry, I could not find a definition for the term '{term}'."
+        
+    except FileNotFoundError:
+        return "Error: The census metadata file (acs_census_metadata.json) was not found."
     except Exception as e:
-        return f"Error in knowledge search: {e}"
+        return f"Error reading census metadata: {e}"
 
-# 4. Define the LangChain Tool for our main agent to use
-# In tools/knowledge_tool.py
-# (This is the new, simple description)
-general_knowledge_tool = Tool.from_function(
-    func=_run_general_knowledge,
-    name="GeneralKnowledgeSearch",
-    description=(
-        "Use this for any general knowledge questions or facts about current events, companies, people, or "
-        "any data NOT related to the US Census (e.g., 'What is the capital of France?' or 'population of Canada')."
-    )
-)

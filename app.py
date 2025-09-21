@@ -1,315 +1,443 @@
-# In app.py
 import streamlit as st
-import streamlit.components.v1 as components
-import json 
 import pandas as pd
-from io import StringIO
-
-# --- (All imports from previous step remain the same) ---
-from langchain.memory import ConversationBufferMemory
-from langchain_google_vertexai import ChatVertexAI
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder
-from langchain_core.output_parsers import StrOutputParser
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain import hub
-from langchain_core.runnables import RunnableBranch, RunnableLambda
-from google.cloud.aiplatform_v1beta1.types import Tool as VertexTool
+import io
+import os
 from pydantic import BaseModel, Field
 from typing import Literal
-from langchain_experimental.agents.agent_toolkits import create_python_agent
-from langchain_experimental.tools import PythonREPLTool
-from tools.looker_tool import looker_data_tool
-from tools.social_tool import social_tool
-from tools.knowledge_tool import general_knowledge_tool
-from tools.cache_tool import save_to_cache 
-from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.agents import AgentAction, AgentFinish
-from typing import Any, Dict, List
 
-# --- CALLBACK HANDLER CLASS (Unchanged) ---
-class StreamlitCallback(BaseCallbackHandler):
-    # (This class is unchanged)
-    def __init__(self, status_container, log_container):
-        self.status = status_container
-        self.log = log_container
-    def on_llm_start(self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any) -> None:
-        self.status.update(label="Agent is thinking...")
-        self.log.write(f"🤔 **Thinking...** ({serialized.get('name', 'LLM')})")
-        self.log.code(prompts[0], language="text")
-    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
-        self.status.update(label=f"Calling tool: `{action.tool}`...")
-        tool_input_str = action.tool_input
-        if isinstance(tool_input_str, dict): 
-            tool_input_str = json.dumps(action.tool_input, indent=2)
-        self.log.markdown(f"🛠️ **Calling Tool:** `{action.tool}` with input:\n```json\n{tool_input_str}\n```")
-    def on_tool_end(self, output: str, **kwargs: Any) -> None:
-        self.status.update(label="Got tool result. Thinking...")
-        self.log.markdown(f"👀 **Observation:**\n```text\n{output}\n```")
-    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
-        self.status.update(label="Formulating final answer...")
-        self.log.write("✅ **Agent Finished:** Returning final response.")
+# --- LLM Imports ---
+from langchain_google_genai import ChatGoogleGenerativeAI
 
+# --- Langchain Core Imports ---
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnableBranch, RunnablePassthrough
+from langchain.output_parsers.pydantic import PydanticOutputParser
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain_experimental.tools.python.tool import PythonREPLTool
+from langchain_core.tools import render_text_description
 
-# --- 1. SPECIALIST CHAINS & TOOLS (Unchanged) ---
-def create_looker_agent():
-    # (This function is unchanged)
-    llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
-    looker_tools = [looker_data_tool, save_to_cache] 
-    looker_prompt = hub.pull("hwchase17/openai-tools-agent")
-    patch_instructions = (
-        "\n\n**CRITICAL WORKFLOW:**\n"
-        "1.  Call `LookerDataQuery` to get data and viz URL.\n"
-        "2.  The tool returns 'data' (JSON) and 'viz_url'.\n"
-        "3.  Invent a descriptive dataset_name and call `save_to_cache`.\n"
-        "4.  Construct a 'Final Answer' with a data summary, the dataset_name, and the 'VIZ_URL_TO_RENDER:' string.\n"
-    )
-    original_system_message = looker_prompt.messages[0].prompt.template
-    patched_system_message = original_system_message + patch_instructions
-    looker_prompt.messages[0] = SystemMessagePromptTemplate.from_template(patched_system_message)
-    agent = create_tool_calling_agent(llm, looker_tools, looker_prompt)
-    return AgentExecutor(
-        agent=agent, tools=looker_tools, verbose=True, handle_parsing_errors=True
-    )
-looker_agent_chain = create_looker_agent()
+# --- Tool Imports ---
+from tools.looker_tool import (
+    get_all_looks, 
+    get_looker_query_payload, 
+    run_looker_query,
+    get_visualization_embed_url,
+    create_and_run_inline_query  # <-- NEW TOOL IMPORTED
+)
+from tools.knowledge_tool import get_census_data_definition
+from tools.social_tool import get_profile_data
+from tools.cache_tool import load_df_from_cache, save_data_to_cache
 
-def create_python_agent_chain():
-    # (This function is unchanged)
-    llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
-    data_cache = st.session_state.get("data_cache", {})
-    python_tool_locals = {"pd": pd, "data_cache": data_cache, "StringIO": StringIO, "json": json}
-    python_tool = PythonREPLTool(locals=python_tool_locals)
-    agent_prompt = hub.pull("hwchase17/openai-tools-agent")
-    PYTHON_AGENT_RULES = """
-You are an expert Python data analyst... (full rules unchanged: load from data_cache, save plot.png, print PLOT_GENERATED)...
-Available datasets: {dataset_names}
-"""
-    dataset_names = list(data_cache.keys())
-    system_message_prefix = PYTHON_AGENT_RULES.format(dataset_names=str(dataset_names))
-    original_system_message = agent_prompt.messages[0].prompt.template
-    patched_system_message = system_message_prefix + "\n\n" + original_system_message
-    agent_prompt.messages[0] = SystemMessagePromptTemplate.from_template(patched_system_message)
-    agent = create_tool_calling_agent(llm, [python_tool], agent_prompt)
-    return AgentExecutor(agent=agent, tools=[python_tool], verbose=True, handle_parsing_errors=True)
+# ==============================================================================
+# 1. Initialize LLM
+# ==============================================================================
 
-knowledge_llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0).bind_tools([VertexTool(google_search={})])
-knowledge_prompt = ChatPromptTemplate.from_messages([
-    ("system", "Answer the user's question based on history and your knowledge. Use search if needed."),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{input}")
-])
-knowledge_chain = knowledge_prompt | knowledge_llm | StrOutputParser()
-
-social_llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0.7)
-social_prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a friendly, conversational AI. Respond to the user's social message."),
-    MessagesPlaceholder(variable_name="chat_history"),
-    ("human", "{input}")
-])
-social_chain = social_prompt | social_llm | StrOutputParser()
-
-
-# --- 2. THE ROUTER (PROMPT RE-ORDERED FOR EMPHASIS) ---
-
-# 1. Define the Pydantic schema (Unchanged)
-class RouteQuery(BaseModel):
-    """The classification decision for routing a user query."""
-    intent: Literal['looker', 'python_analysis', 'knowledge', 'social'] = Field(
-        ..., 
-        description="The classified intent based on the user's question and history."
-    )
-
-# 2. Create the prompt (THIS IS THE FIX)
-# We are moving the HARD RULES to the BOTTOM of the prompt, just before the response.
-router_prompt_template = """Your sole task is to classify the user's intent from their latest question, based on the chat history.
-You must select one of four intents: ['looker', 'python_analysis', 'social', 'knowledge'].
-
-Chat History:
-{chat_history}
----
-User Question: {input}
----
-Examples (Review these patterns):
-User Question: What is the total population? -> classify as 'looker'
-User Question: population in california -> classify as 'looker'
-User Question: what is the total male vs female population in the US? -> classify as 'looker'
-User Question: Male vs female population rates in the US from census data in Looker? -> classify as 'looker'
-User Question: how many high school students are in California? -> classify as 'looker'
-User Question: Now plot the data I just got -> classify as 'python_analysis'
-User Question: calculate the average of `female_pop_by_state` -> classify as 'python_analysis'
-User Question: hi -> classify as 'social'
-User Question: what is the capital of france? -> classify as 'knowledge'
-User Question: are there telus offices in the us? -> classify as 'knowledge'
-User Question: how does that compare to the world? -> classify as 'knowledge'
----
-**CRITICAL ROUTING RULES (You MUST follow these):**
-1.  **'social'**: Does the question look like a greeting, farewell, or simple chit-chat?
-2.  **'python_analysis'**: Does the user ask to 'plot', 'calculate', 'analyze', or refer to a saved dataset name?
-3.  **'looker'**: Does the question ask about ANY US census data, population, demographics (race, gender, age), or income?
-4.  **RULE 3 OVERRIDE:** ALL questions about US demographics MUST go to 'looker', even if Google Search could also answer them. This is the primary data source. NO EXCEPTIONS.
-5.  **'knowledge'**: This is the DEFAULT fallback ONLY if the query does not match social, python, or looker.
-
-Now, classify the user's question based on these rules and examples.
-"""
-router_prompt = ChatPromptTemplate.from_template(router_prompt_template)
-router_llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
-
-# 3. Create the router chain (Unchanged)
-router_chain = router_prompt | router_llm.with_structured_output(RouteQuery)
-# --- END ROUTER REWRITE ---
-
-
-# --- 3. THE MAIN CHAIN (RunnableBranch - Unchanged) ---
-def route(info):
-    intent = info.get("intent")
-    user_input = info.get("input") 
-    chat_history_messages = info.get("chat_history_messages") 
+# Get the API key from Streamlit secrets
+try:
+    GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+    if not GOOGLE_API_KEY:
+        raise ValueError("GOOGLE_API_KEY is missing or empty in secrets.toml")
     
-    if intent == 'looker':
-        return looker_agent_chain.invoke({"input": user_input, "chat_history": chat_history_messages})
-    elif intent == 'python_analysis':
-        python_agent = create_python_agent_chain() 
-        return python_agent.invoke({"input": user_input}) # No history passed to Python agent
-    elif intent == 'social':
-        return social_chain.invoke({"input": user_input, "chat_history": chat_history_messages})
-    else: 
-        return knowledge_chain.invoke({"input": user_input, "chat_history": chat_history_messages})
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-pro", 
+        google_api_key=GOOGLE_API_KEY,
+        temperature=0,
+        convert_system_message_to_human=True # Gemini prefers this
+    )
+except Exception as e:
+    st.error(f"Error initializing LLM: {e}")
+    st.stop()
 
-full_chain = (
-    {
-        "intent_obj": router_chain,
-        "input": lambda x: x["input"],
-        "chat_history_messages": lambda x: x["chat_history"]
-    }
-    | RunnableLambda(lambda x: {"intent": x["intent_obj"].intent, "input": x["input"], "chat_history_messages": x["chat_history_messages"]})
-    | RunnableLambda(route)
-    | RunnableLambda(lambda result: result.get("output") if isinstance(result, dict) else result) 
+
+# ==============================================================================
+# 2. Pydantic Model for Routing
+# ==============================================================================
+
+class RouteQuery(BaseModel):
+    """Classifies the user's query to the appropriate agent."""
+    destination: Literal["looker", "python_agent", "social", "general"] = Field(
+        ..., 
+        description=(
+            "The agent to route the query to. "
+            "'looker' for data retrieval/visualization about US census data. "
+            "'python_agent' for analysis, math, or manipulation on *already cached* data. "
+            "'social' for questions about LinkedIn profiles. "
+            "'general' for conversation, definitions, or anything else."
+        )
+    )
+
+# ==============================================================================
+# 3. Router Chain
+# ==============================================================================
+
+router_prompt_template = """
+You are an expert dispatcher routing user queries to the correct agent.
+Based on the user's query and chat history, you must classify it into one of the following destinations.
+Your response must be a JSON object matching the 'RouteQuery' Pydantic schema.
+
+<SCHEMA>
+{schema}
+</SCHEMA>
+
+CHAT HISTORY:
+{chat_history}
+
+USER QUERY:
+{input}
+
+CLASSIFICATION:
+"""
+
+parser = PydanticOutputParser(pydantic_object=RouteQuery)
+
+router_prompt = PromptTemplate(
+    template=router_prompt_template,
+    input_variables=["input", "chat_history"],
+    partial_variables={"schema": parser.get_format_instructions()}
 )
 
+# The router chain itself
+router = router_prompt | llm | parser
 
-# --- 4. STREAMLIT APP (Unchanged) ---
-if "memory" not in st.session_state:
-    st.session_state.memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=True
-    )
-if "data_cache" not in st.session_state:
-    st.session_state.data_cache = {}
+# ==============================================================================
+# 4. Agent Definitions
+# ==============================================================================
 
-st.title("🤖 Looker AI Chatbot")
-st.caption("I can answer questions about US Census data... or anything else!")
+# --- 4a. Python Agent ---
+PYTHON_AGENT_PROMPT_TEMPLATE = """
+You are an expert Python data analyst. You have access to a Python REPL tool.
+A pandas DataFrame named `df` has already been loaded into the REPL's memory.
+DO NOT try to load any data or use any other variable names; use `df` directly.
 
-with st.sidebar:
-    st.header("Cached Datasets 💾")
-    if not st.session_state.data_cache:
-        st.info("No datasets cached yet. Ask the bot to query Looker!")
-    else:
-        st.caption("Available for the Python Analyst:")
-        for name, data_json in st.session_state.data_cache.items():
-            try:
-                data = json.loads(data_json)
-                if isinstance(data, list) and len(data) > 0:
-                    num_rows = len(data)
-                    columns = list(data[0].keys())
-                    with st.expander(f"**{name}** ({num_rows} rows)"):
-                        st.code(", ".join(columns), language="text")
-                elif isinstance(data, list) and len(data) == 0:
-                     st.expander(f"**{name}** (0 rows)")
-                else: 
-                    with st.expander(f"**{name}** (Scalar Value)"):
-                        st.json(data)
-            except Exception as e:
-                st.error(f"Error reading {name}")
+The `df` DataFrame contains data from a recent Looker query.
+Here is the schema of `df` (from df.info()):
+{schema}
 
-msgs = st.session_state.memory.chat_memory.messages
-for msg in msgs:
-    with st.chat_message(msg.type):
-        if "VIZ_URL_TO_RENDER:" in msg.content:
-            text_answer, viz_url = msg.content.split("VIZ_URL_TO_RENDER:", 1) 
-            st.markdown(text_answer.strip())
-            st.markdown(f"_[Test Visualization Link]({viz_url.strip()})_")
-            components.iframe(viz_url.strip(), height=500)
-        elif "PLOT_GENERATED:" in msg.content:
-            text_answer, plot_path = msg.content.split("PLOT_GENERATED:", 1)
-            st.markdown(text_answer.strip())
-            st.image(plot_path.strip())
+Your task is to write and execute Python code to answer the user's question.
+- Only use the `df` dataframe.
+- Perform any calculations or manipulations needed.
+- You MUST end your final code block with a `print()` statement
+  containing the result or answer.
+- Do not install any packages. Pandas is already available.
+
+Here are the available tools:
+{tools}
+
+Use the following format:
+Thought: I need to write Python code to answer the user's question.
+Action: The action to take, should be one of [{tool_names}]
+Action Input: 
+```python
+# Your python code here
+print(df.some_method())
+```
+Observation: The result of your code.
+... (this thought/action/observation can repeat)
+Thought: I now have the final answer.
+Final Answer: The final answer to the user
+
+USER INPUT: {input}
+CHAT HISTORY: {chat_history}
+
+Begin!
+Thought:
+{agent_scratchpad}
+"""
+
+python_agent_prompt = PromptTemplate(
+    template=PYTHON_AGENT_PROMPT_TEMPLATE,
+    input_variables=["input", "chat_history", "agent_scratchpad", "schema", "tools", "tool_names"]
+)
+
+def create_python_agent_chain():
+    """Creates the Python agent executor with the data_cache injected."""
+    data_cache = load_df_from_cache.func() 
+    
+    if data_cache is None or data_cache.empty:
+        return (lambda x: "There is no data cached to analyze. Please run a Looker query first.")
+
+    buffer = io.StringIO()
+    data_cache.info(buf=buffer)
+    schema = buffer.getvalue()
+
+    tools = [PythonREPLTool(locals={"df": data_cache})]
+    
+    tools_description = render_text_description(tools)
+    tool_names = ", ".join([t.name for t in tools])
+
+    agent = create_react_agent(llm, tools, python_agent_prompt)
+    
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=tools, 
+        verbose=True,
+        handle_parsing_errors=True
+    ).with_config({"run_name": "PythonAgent"})
+    
+    return agent_executor.bind(schema=schema, tools=tools_description, tool_names=tool_names)
+
+
+# --- 4b. Looker Agent ---
+# --- COMPLETELY REWRITTEN PROMPT ---
+LOOKER_AGENT_PROMPT_TEMPLATE = """
+You are an expert in US Census data and a master of the Looker platform.
+Your goal is to answer the user's question using the Looker tools.
+
+**EXPLORE INFORMATION:**
+All US Census data is in a single Looker Explore with the following details:
+- Model: `us_census`
+- View: `population_data`
+- Key Fields: 
+  - `population_data.count` (Measure)
+  - `population_data.average_age` (Measure)
+  - `gender.name` (Dimension)
+  - `state.name` (Dimension)
+  - `age.group` (Dimension)
+  - `education.level` (Dimension)
+  - `income.bracket` (Dimension)
+
+**YOUR STRATEGY:**
+You must follow this plan:
+1.  **Check Looks:** First, call `get_all_looks()` to see if a pre-built report (Look) matches the user's request.
+2.  **Run Look:** If you find a Look with a title that is a *perfect match* (e.g., user asks for 'gender breakdown' and a Look is titled 'Gender Demographics'), then use `get_looker_query_payload` and `run_looker_query` to run it.
+3.  **Build Inline Query:** If NO Look title is a good match, DO NOT try to run a Look. Instead, use `create_and_run_inline_query` to build a new query from scratch. Use the 'Explore Information' above to get the correct model, view, and field names.
+4.  **Visualize:** If the user asks to "see" a chart or visualization, use `get_visualization_embed_url` with the `look_id` *after* you have determined a good Look exists.
+
+**AVAILABLE TOOLS:**
+{tools}
+
+**FORMAT:**
+Use the following format:
+Thought: I need to decide my strategy.
+Action: The action to take, should be one of [{tool_names}]
+Action Input: The input for the tool.
+Observation: The result from the tool.
+... (this thought/action/observation can repeat)
+Thought: I now have the final answer.
+Final Answer: The final answer to the user
+
+USER INPUT: {input}
+CHAT HISTORY: {chat_history}
+
+Begin!
+Thought:
+{agent_scratchpad}
+"""
+
+looker_agent_prompt = PromptTemplate(
+    template=LOOKER_AGENT_PROMPT_TEMPLATE,
+    input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
+)
+
+def create_looker_agent_chain():
+    tools = [
+        get_all_looks,
+        get_looker_query_payload,
+        run_looker_query,
+        get_visualization_embed_url,
+        get_census_data_definition,
+        create_and_run_inline_query  # <-- NEW TOOL ADDED
+    ]
+    
+    tools_description = render_text_description(tools)
+    tool_names = ", ".join([t.name for t in tools])
+    
+    agent = create_react_agent(llm, tools, looker_agent_prompt)
+    
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=tools, 
+        verbose=True,
+        handle_parsing_errors=True
+    ).with_config({"run_name": "LookerAgent"})
+    
+    return agent_executor.bind(tools=tools_description, tool_names=tool_names)
+
+
+# --- 4c. Social Agent ---
+SOCIAL_AGENT_PROMPT_TEMPLATE = """
+You are a social media research assistant.
+Your only task is to get data about LinkedIn profiles using the provided tool.
+Do not make up information.
+
+Here are the available tools:
+{tools}
+
+Use the following format:
+Thought: I need to use the get_profile_data tool.
+Action: The action to take, should be one of [{tool_names}]
+Action Input: The LinkedIn profile URL from the user input.
+Observation: The result from the tool.
+Thought: I now have the final answer.
+Final Answer: The profile data or an error message.
+
+USER INPUT: {input}
+CHAT HISTORY: {chat_history}
+
+Begin!
+Thought:
+{agent_scratchpad}
+"""
+
+social_agent_prompt = PromptTemplate(
+    template=SOCIAL_AGENT_PROMPT_TEMPLATE,
+    input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
+)
+
+def create_social_agent_chain():
+    tools = [get_profile_data]
+
+    tools_description = render_text_description(tools)
+    tool_names = ", ".join([t.name for t in tools])
+    
+    agent = create_react_agent(llm, tools, social_agent_prompt)
+    
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=tools, 
+        verbose=True,
+        handle_parsing_errors=True
+    ).with_config({"run_name": "SocialAgent"})
+    
+    return agent_executor.bind(tools=tools_description, tool_names=tool_names)
+
+
+# --- 4d. General Agent (Fallback) ---
+GENERAL_AGENT_PROMPT_TEMPLATE = """
+You are a helpful assistant.
+Your goal is to provide helpful, conversational answers to the user's question.
+You can also provide definitions for US Census terms using your tools.
+
+Here are the available tools:
+{tools}
+
+Use the following format:
+Thought: Do I need to use a tool?
+Action: The action to take, should be one of [{tool_names}] (or 'No' if no tool is needed).
+Action Input: The input for the tool (e.g., 'poverty line')
+Observation: The result from the tool.
+Thought: I now have the final answer.
+Final Answer: The final answer to the user
+
+USER INPUT: {input}
+CHAT HISTORY: {chat_history}
+
+Begin!
+Thought:
+{agent_scratchpad}
+"""
+
+general_agent_prompt = PromptTemplate(
+    template=GENERAL_AGENT_PROMPT_TEMPLATE,
+    input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
+)
+
+def create_general_agent_chain():
+    tools = [get_census_data_definition]
+    
+    tools_description = render_text_description(tools)
+    tool_names = ", ".join([t.name for t in tools])
+    
+    agent = create_react_agent(llm, tools, general_agent_prompt)
+    
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=tools, 
+        verbose=True,
+        handle_parsing_errors=True
+    ).with_config({"run_name": "GeneralAgent"})
+    
+    return agent_executor.bind(tools=tools_description, tool_names=tool_names)
+
+# ==============================================================================
+# 5. Main Graph / Chain
+# ==============================================================================
+
+branch = RunnableBranch(
+    (lambda x: x['route'].destination == "looker", create_looker_agent_chain()),
+    (lambda x: x['route'].destination == "python_agent", create_python_agent_chain()),
+    (lambda x: x['route'].destination == "social", create_social_agent_chain()),
+    create_general_agent_chain() 
+)
+
+chain = (
+    RunnablePassthrough.assign(route=router)
+    | branch
+)
+
+# ==============================================================================
+# 6. Streamlit UI
+# ==============================================================================
+
+def setup_sidebar():
+    """Configures and displays the Streamlit sidebar with cached data."""
+    st.sidebar.title("Cached Datasource")
+    
+    try:
+        # Use the tool's function to load the data
+        df = load_df_from_cache.func() 
+        
+        if df is not None and not df.empty:
+            st.sidebar.info(f"**data.csv** loaded ({len(df)} rows)")
+            st.sidebar.dataframe(df.head())
+            
+            # Convert DataFrame to CSV string for downloading
+            csv_data = df.to_csv(index=False).encode('utf-8')
+            
+            st.sidebar.download_button(
+                label="📥 Download data.csv",
+                data=csv_data,
+                file_name="data.csv",
+                mime="text/csv",
+            )
         else:
-            st.markdown(msg.content)
+            st.sidebar.info("No data cached. Run a Looker query in the chatbot to load data.")
+    except FileNotFoundError:
+        st.sidebar.info("No data.csv file found. Run a Looker query to create one.")
+    except Exception as e:
+        st.sidebar.error(f"Error loading cache: {e}")
 
+# --- Main Page ---
+st.set_page_config(page_title="Semantic Chatbot", layout="wide")
+st.title("Semantic Chatbot 🤖")
+
+# --- Setup Sidebar ---
+# This will be displayed on the main "app.py" page
+setup_sidebar()
+
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# React to user input
 if prompt := st.chat_input("What would you like to know?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        log_expander = st.expander("View Agent Thought Process")
-        status_container = st.status("Agent is routing...", expanded=True)
-        
-        chat_history = st.session_state.memory.chat_memory.messages
-        
-        with log_expander:
-            st.write("🧠 **Routing...**")
-            router_output_obj = router_chain.invoke({
-                "input": prompt,
-                "chat_history": chat_history
-            })
-            intent = router_output_obj.intent
-            st.markdown(f"**Intent Classified:** `{intent}`")
-        
-        with status_container:
-            if intent == 'looker':
-                status_container.update(label="Querying Looker Agent...")
-                with log_expander:
-                    callback_container = st.container()
-                    callback = StreamlitCallback(status_container, callback_container)
-                response = looker_agent_chain.invoke(
-                    {"input": prompt, "chat_history": chat_history},
-                    config={"callbacks": [callback]}
+        with st.spinner("Thinking..."):
+            try:
+                chat_history_str = "\n".join(
+                    [f"{m['role']}: {m['content']}" for m in st.session_state.messages[:-1]]
                 )
-                answer = response.get("output")
-
-            elif intent == 'python_analysis':
-                status_container.update(label="Running Python Data Analyst...")
-                with log_expander:
-                    st.write("🐍 **Invoking Python Analyst**")
-                    st.write(f"Available datasets: {list(st.session_state.data_cache.keys())}")
-                    python_log_container = st.container()
-                    callback = StreamlitCallback(status_container, python_log_container)
                 
-                python_agent = create_python_agent_chain()
-                response = python_agent.invoke(
-                    {"input": prompt}, # We pass ONLY the prompt, no history
-                    config={"callbacks": [callback]}
-                )
-                answer = response.get("output")
+                chain_input = {"input": prompt, "chat_history": chat_history_str}
+                
+                response = chain.invoke(chain_input)
+                
+                final_answer = response.get("output", "I'm sorry, I encountered an error.")
+                
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+                final_answer = "I'm sorry, I'm having trouble processing that request."
 
-            elif intent == 'social':
-                status_container.update(label="Generating social response...")
-                answer = social_chain.invoke({
-                    "input": prompt,
-                    "chat_history": chat_history
-                })
+        st.markdown(final_answer)
+    
+    st.session_state.messages.append({"role": "assistant", "content": final_answer})
 
-            else: # Default to knowledge
-                status_container.update(label="Searching knowledge base...")
-                answer = knowledge_chain.invoke({
-                    "input": prompt,
-                    "chat_history": chat_history
-                })
-        
-        status_container.update(label="Task Complete!", state="complete", expanded=False)
-        
-        if "VIZ_URL_TO_RENDER:" in answer:
-            text_answer, viz_url = answer.split("VIZ_URL_TO_RENDER:", 1) 
-            st.markdown(text_answer.strip())
-            st.markdown(f"_[Test Visualization Link]({viz_url.strip()})_")
-            components.iframe(viz_url.strip(), height=500)
-        elif "PLOT_GENERATED:" in answer:
-            text_answer, plot_path = answer.split("PLOT_GENERATED:", 1)
-            st.markdown(text_answer.strip())
-            st.image(plot_path.strip())
-        else:
-            st.markdown(answer)
-        
-        st.session_state.memory.chat_memory.add_user_message(prompt)
-        st.session_state.memory.chat_memory.add_ai_message(answer)
-        
-        st.rerun()

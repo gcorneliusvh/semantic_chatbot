@@ -1,20 +1,32 @@
-# In tools/cache_tool.py
+import pandas as pd
 import streamlit as st
-import json
-from langchain.tools import tool
+# --- THIS IS THE FIX ---
+from langchain_core.tools import tool
+# --- END FIX ---
 
 @tool
-def save_to_cache(dataset_name: str, data_json: str) -> str:
+def save_data_to_cache(dataf: pd.DataFrame, file_path: str = "data_cache.csv") -> str:
     """
-    Saves a JSON dataset (passed as a string) to the in-memory cache
-    under a given dataset_name.
+    Saves a pandas DataFrame to a CSV file.
     """
-    if "data_cache" not in st.session_state:
-        st.session_state.data_cache = {}
     try:
-        # We store the raw JSON data, not the parsed object.
-        # This gives the python agent more flexibility.
-        st.session_state.data_cache[dataset_name] = data_json
-        return f"Successfully saved dataset as '{dataset_name}' in the data_cache."
+        dataf.to_csv(file_path, index=False)
+        return f"Data saved to {file_path}"
     except Exception as e:
-        return f"Error saving to cache: {e}"
+        return f"Error saving data: {e}"
+
+@tool
+def load_df_from_cache(file_path: str = "data_cache.csv") -> pd.DataFrame:
+    """
+    Loads data from a CSV file into a pandas DataFrame.
+    Returns None if the file is not found.
+    """
+    try:
+        df = pd.read_csv(file_path)
+        return df
+    except FileNotFoundError:
+        # Return None so app.py can handle it gracefully
+        return None
+    except Exception as e:
+        print(f"Error loading cache: {e}")
+        return None

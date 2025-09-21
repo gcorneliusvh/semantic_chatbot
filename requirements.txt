@@ -1,12 +1,10 @@
-# Core AI and Framework
-langchain
-langchain-google-vertexai
-google-cloud-aiplatform
-langchain_community
-
-# Looker & Data
-looker-sdk
-google-cloud-bigquery
-
-# Frontend
 streamlit
+pandas
+langchain
+langchain-google-genai
+langchain-community
+looker-sdk
+requests
+pydantic
+langchain-openai
+langchain-experimental

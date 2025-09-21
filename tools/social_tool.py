@@ -1,28 +1,58 @@
-# In tools/social_tool.py
-from langchain.tools import Tool
-from langchain_google_vertexai import ChatVertexAI
+import streamlit as st
+import os
+import requests
+from langchain_core.tools import tool
 
-# UPDATED to gemini-2.5-pro
-llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0.5)
+# --- Pydantic Import ---
+from pydantic import BaseModel, Field
 
-def _social_chat(query: str) -> str:
-    """Responds to social queries."""
+# ==============================================================================
+# Pydantic Input Schemas
+# ==============================================================================
+
+class ProfileInput(BaseModel):
+    profile_url: str = Field(description="The full URL of the LinkedIn profile to look up.")
+
+# ==============================================================================
+# Tool Definitions
+# ==============================================================================
+
+@tool(args_schema=ProfileInput)
+def get_profile_data(profile_url: str) -> str:
+    """
+    Fetches data for a specific LinkedIn profile URL using the Proxycurl API.
     
-    # We can give it a simple persona prompt
-    prompt = f"""
-    You are a friendly and helpful assistant. 
-    A user just said this to you: "{query}"
-    Respond in a brief, conversational way.
+    Args:
+        profile_url: The full URL of the LinkedIn profile to look up.
     """
     try:
-        response = llm.invoke(prompt)
-        return response.content
+        api_key = st.secrets["PROXYCURL_API_KEY"]
+        if not api_key:
+            return "Error: PROXYCURL_API_KEY is not set in Streamlit secrets."
+            
+    except KeyError:
+        return "Error: PROXYCURL_API_KEY not found in Streamlit secrets."
+        
+    api_endpoint = 'https://nubela.co/proxycurl/api/v2/linkedin'
+    headers = {'Authorization': f'Bearer {api_key}'}
+    params = {
+        'url': profile_url,
+    }
+
+    try:
+        response = requests.get(api_endpoint, params=params, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 401:
+            return "Error: Invalid Proxycurl API key."
+        elif response.status_code == 404:
+            return f"Error: LinkedIn profile not found at {profile_url}"
+        else:
+            return f"Error: API request failed with status code {response.status_code}. Response: {response.text}"
+            
+    except requests.exceptions.RequestException as e:
+        return f"Error making API request: {e}"
     except Exception as e:
-        return f"Sorry, I had trouble with that: {e}"
+        return f"An unexpected error occurred: {e}"
 
-
-social_tool = Tool.from_function(
-    func=_social_chat,
-    name="SocialChat",
-    description="Use this tool for greetings, farewells, and casual, non-data, non-knowledge questions (e.g., 'how are you?', 'hello', 'thanks')."
-)
