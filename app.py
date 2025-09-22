@@ -26,6 +26,8 @@ from langchain_core.tools import render_text_description
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 # --- NEW: Import for Callback Handler ---
 from langchain_core.callbacks.base import BaseCallbackHandler
+# --- NEW: Import for Parsing Fallback ---
+from langchain_core.exceptions import OutputParserException
 
 # --- Tool Imports ---
 from tools.looker_tool import looker_data_tool
@@ -54,11 +56,14 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
              self.thoughts.append(f"> Entering new {serialized.get('name', 'chain')}...")
         # --- ^^^ FIX ---
 
+    # --- vvv MODIFIED: Fixed code block formatting vvv ---
     def on_agent_action(
         self, action: Any, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Log the agent's action."""
-        self.thoughts.append(f"Action: {action.tool}\nAction Input:\n```{action.tool_input}\n```")
+        # Add newlines and language hint for proper markdown rendering
+        self.thoughts.append(f"Action: {action.tool}\nAction Input:\n```python\n{action.tool_input}\n```")
+    # --- ^^^ MODIFIED ^^^ ---
 
     def on_tool_end(
         self, output: str, color: Optional[str] = None, **kwargs: Any
@@ -163,7 +168,7 @@ router = router_prompt | llm_flash | parser
 # ==============================================================================
 
 # --- 4a. Python Agent ---
-# --- vvv MODIFIED: Switched to Structured Chat Agent & updated prompt vvv ---
+# --- vvv MODIFIED: Reverted to pre-loading 'df' and updated prompt vvv ---
 PYTHON_AGENT_PROMPT_TEMPLATE = """
 You are an expert Python data analyst. You have access to a Python REPL tool.
 Your primary task is to answer the user's question by analyzing a pandas DataFrame named `df`.
@@ -239,16 +244,15 @@ def create_python_agent_chain():
     if not os.path.exists("data.csv"):
         return (lambda x: "There is no data cached to analyze. Please run a Looker query first.")
 
-    # Load the df into memory *once*
+    # --- vvv MODIFIED: Pre-load df and add to locals vvv ---
     df = load_df_from_cache.func(file_path="data.csv")
     
-    # --- vvv NEW: Add check for None DataFrame vvv ---
     if df is None:
         return (lambda x: "Could not load data.csv. The file might be empty or corrupt. Please run a Looker query first.")
-    # --- ^^^ NEW ^^^ ---
     
     # Provide the loaded df to the tool's local scope
     tools = [PythonREPLTool(locals={"pd": pd, "df": df})]
+    # --- ^^^ MODIFIED ^^^ ---
     
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
@@ -265,12 +269,12 @@ def create_python_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True,
-        return_intermediate_steps=True # Still return steps for the expander
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
+        return_intermediate_steps=True 
     ).with_config({"run_name": "PythonAgent"})
     
     return agent_executor
-# --- ^^^ MODIFIED: Switched to Structured Chat Agent & added df check ^^^ ---
+# --- ^^^ MODIFIED: Python agent logic and error handling ^^^ ---
 
 
 # --- 4b. Looker Agent ---
@@ -449,7 +453,7 @@ def create_looker_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
     ).with_config({"run_name": "LookerAgent"})
     
     return agent_executor
@@ -484,7 +488,8 @@ Action:
 ```
 
 USER INPUT: {input}
-CHAT HISTORY: {chat_history}
+CHAT HISTORY:
+{chat_history}
 
 Begin!
 Thought:
@@ -514,7 +519,7 @@ def create_social_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
     ).with_config({"run_name": "SocialAgent"})
     
     return agent_executor
@@ -558,7 +563,8 @@ Action:
 ```
 
 USER INPUT: {input}
-CHAT HISTORY: {chat_history}
+CHAT HISTORY:
+{chat_history}
 
 Begin!
 Thought:
@@ -588,7 +594,7 @@ def create_general_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
     ).with_config({"run_name": "GeneralAgent"})
     
     return agent_executor
@@ -745,11 +751,17 @@ for i, message in enumerate(st.session_state.messages): # <-- Add enumerate
 
 
 # --- vvv MODIFIED: Handle prompt from chat_input OR button click vvv ---
-if st.session_state.clicked_prompt:
-    prompt = st.session_state.clicked_prompt
-    st.session_state.clicked_prompt = None # Clear it after use
-else:
-    prompt = st.chat_input("What would you like to know?")
+
+# Always render the chat input box at the bottom
+prompt_from_input = st.chat_input("What would you like to know?")
+
+# Check if a button was clicked in the last run
+prompt_from_button = st.session_state.clicked_prompt
+st.session_state.clicked_prompt = None # Clear it immediately
+
+# Decide which prompt to use
+prompt = prompt_from_input or prompt_from_button
+
 # --- ^^^ MODIFIED ^^^ ---
 
 
@@ -802,6 +814,7 @@ if prompt:
                 data_stats = None     # <-- NEW: Variable to hold the stats
                 followup_questions = [] # Variable to hold questions
                 
+                # --- vvv MODIFIED: Add try/except for OutputParserException vvv ---
                 try:
                     response = branch.invoke(chain_input, config=config)
                     
@@ -810,39 +823,45 @@ if prompt:
                     else:
                         # This handles output from all agents now
                         final_answer = response.get("output", "I'm sorry, I encountered an error.")
-                    
-                    # --- vvv MODIFIED: Check for viz_url, summary, and stats vvv ---
-                    if st.session_state.temp_viz_url:
-                        viz_url = st.session_state.temp_viz_url
-                        st.session_state.temp_viz_url = None # Clear it
-                        
-                    if st.session_state.temp_data_summary:
-                        data_summary = st.session_state.temp_data_summary
-                        st.session_state.temp_data_summary = None # Clear it
-                    
-                    if st.session_state.temp_data_stats: # <-- NEW
-                        data_stats = st.session_state.temp_data_stats
-                        st.session_state.temp_data_stats = None # Clear it
-                    # --- ^^^ MODIFIED ^^^ ---
-
-                    # --- vvv MODIFIED: Generate follow-up questions with stats vvv ---
-                    if (route and route.destination == 'looker' and 
-                        data_summary and data_stats and # <-- Check for stats
-                        not final_answer.startswith("I'm sorry")):
-                        
-                        with st.spinner("Generating follow-up questions..."):
-                            followup_questions = get_followup_questions(
-                                user_query=prompt,
-                                chat_history=chat_history_list,
-                                data_summary=data_summary,
-                                data_stats=data_stats # <-- Pass stats
-                            )
-                    # --- ^^^ MODIFIED ^N^ ---
+                
+                except OutputParserException as e:
+                    st.warning("The agent's response wasn't formatted perfectly, but I recovered this answer:")
+                    # This is the fallback: use the raw LLM output
+                    final_answer = str(e.llm_output) if hasattr(e, 'llm_output') else str(e)
                     
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
                     final_answer = "I'm sorry, I'm having trouble processing that request."
+                # --- ^^^ MODIFIED ^^^ ---
 
+                # --- vvv MODIFIED: Check for viz_url, summary, and stats vvv ---
+                if st.session_state.temp_viz_url:
+                    viz_url = st.session_state.temp_viz_url
+                    st.session_state.temp_viz_url = None # Clear it
+                    
+                if st.session_state.temp_data_summary:
+                    data_summary = st.session_state.temp_data_summary
+                    st.session_state.temp_data_summary = None # Clear it
+                
+                if st.session_state.temp_data_stats: # <-- NEW
+                    data_stats = st.session_state.temp_data_stats
+                    st.session_state.temp_data_stats = None # Clear it
+                # --- ^^^ MODIFIED ^^^ ---
+
+                # --- vvv MODIFIED: Generate follow-up questions with stats vvv ---
+                if (route and route.destination == 'looker' and 
+                    data_summary and data_stats and # <-- Check for stats
+                    not final_answer.startswith("I'm sorry")):
+                    
+                    with st.spinner("Generating follow-up questions..."):
+                        followup_questions = get_followup_questions(
+                            user_query=prompt,
+                            chat_history=chat_history_list,
+                            data_summary=data_summary,
+                            data_stats=data_stats # <-- Pass stats
+                        )
+                # --- ^^^ MODIFIED ^N^ ---
+                    
             # --- vvv MODIFIED: Render text, then thoughts, then iframe, then follow-ups vvv ---
             
             # 1. Render the main answer
@@ -867,7 +886,7 @@ if prompt:
                         with cols[i % 3]:
                             if st.button(q, key=f"followup_new_{i}"): # Use a unique key
                                 st.session_state.clicked_prompt = q
-                                st.rerun()
+                                # This will cause the rerun
             # --- ^^^ MODIFIED ^^^ ---
         
             # --- vvv MODIFIED: Append new dictionary with followups AND thoughts vvv ---
