@@ -8,4 +8,4 @@ requests
 pydantic
 langchain-openai
 langchain-experimental
-langchain_google_vertexai'
+langchain_google_vertexai

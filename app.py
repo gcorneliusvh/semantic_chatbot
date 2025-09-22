@@ -26,6 +26,12 @@ from langchain_core.tools import render_text_description
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 # --- NEW: Import for Callback Handler ---
 from langchain_core.callbacks.base import BaseCallbackHandler
+# --- NEW: Import for Parsing Fallback ---
+from langchain_core.exceptions import OutputParserException
+# --- NEW: Imports for Google Search ---
+from langchain_community.tools import DuckDuckGoSearchRun # <-- MODIFIED: Switched to DuckDuckGo
+from langchain.tools import Tool
+
 
 # --- Tool Imports ---
 from tools.looker_tool import looker_data_tool
@@ -54,11 +60,14 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
              self.thoughts.append(f"> Entering new {serialized.get('name', 'chain')}...")
         # --- ^^^ FIX ---
 
+    # --- vvv MODIFIED: Fixed code block formatting vvv ---
     def on_agent_action(
         self, action: Any, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Log the agent's action."""
-        self.thoughts.append(f"Action: {action.tool}\nAction Input:\n```{action.tool_input}\n```")
+        # Add newlines and language hint for proper markdown rendering
+        self.thoughts.append(f"Action: {action.tool}\nAction Input:\n```python\n{action.tool_input}\n```")
+    # --- ^^^ MODIFIED ^^^ ---
 
     def on_tool_end(
         self, output: str, color: Optional[str] = None, **kwargs: Any
@@ -163,17 +172,17 @@ router = router_prompt | llm_flash | parser
 # ==============================================================================
 
 # --- 4a. Python Agent ---
-# --- vvv MODIFIED: Updated prompt to load data first vvv ---
+# --- vvv MODIFIED: Reverted to agent-loads-data strategy vvv ---
 PYTHON_AGENT_PROMPT_TEMPLATE = """
 You are an expert Python data analyst. You have access to a Python REPL tool.
 Your primary task is to answer the user's question by analyzing a pandas DataFrame named `df`.
 
 **CRITICAL CONTEXT:**
-- A file named `data.csv` is available in the environment.
+- A file named `data.csv` exists in the local directory.
 - Your **FIRST ACTION** must *always* be to load this file into a pandas DataFrame named `df`.
-  Example: `df = pd.read_csv('data.csv')`
+  Example: `import pandas as pd\ndf = pd.read_csv('data.csv')`
 - After loading, your second action should *always* be to inspect the columns: `print(df.columns)`
-- **DO NOT** assume `df` is already loaded. You must load it.
+- **DO NOT** assume `df` is already loaded. You must load it *every time* you start.
 - The pandas library is available as `pd`.
 - Your final answer should be conversational, explaining what you found.
 
@@ -187,24 +196,12 @@ Use the following format for your thoughts and actions.
 
 Thought:
 The user is asking for...
-My first step is to load 'data.csv' into a DataFrame `df`.
+My first step is to load 'data.csv' into a DataFrame `df` and print the columns.
 Action:
 ```json
 {{
   "action": "Python_REPL",
-  "action_input": "import pandas as pd\ndf = pd.read_csv('data.csv')\nprint(df.head())"
-}}
-```
-Observation:
-(The tool's output, e.g., showing the first 5 rows)
-
-Thought:
-Great, the data is loaded. My next step is to inspect the columns to find the correct names.
-Action:
-```json
-{{
-  "action": "Python_REPL",
-  "action_input": "print(df.columns)"
+  "action_input": "import pandas as pd\ndf = pd.read_csv('data.csv')\nprint(df.columns)"
 }}
 ```
 Observation:
@@ -253,7 +250,7 @@ def create_python_agent_chain():
     if not os.path.exists("data.csv"):
         return (lambda x: "There is no data cached to analyze. Please run a Looker query first.")
 
-    # --- vvv MODIFIED: Removed 'df' from locals. Agent will load it. vvv ---
+    # --- vvv MODIFIED: Only provide pd in locals. Agent must load df. vvv ---
     tools = [PythonREPLTool(locals={"pd": pd})]
     # --- ^^^ MODIFIED ^^^ ---
     
@@ -272,12 +269,12 @@ def create_python_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True,
-        return_intermediate_steps=True # Still return steps for the expander
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
+        return_intermediate_steps=True 
     ).with_config({"run_name": "PythonAgent"})
     
     return agent_executor
-# --- ^^^ MODIFIED: Python agent now loads its own data ^^^ ---
+# --- ^^^ MODIFIED: Python agent logic and error handling ^^^ ---
 
 
 # --- 4b. Looker Agent ---
@@ -456,7 +453,7 @@ def create_looker_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
     ).with_config({"run_name": "LookerAgent"})
     
     return agent_executor
@@ -522,23 +519,25 @@ def create_social_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
     ).with_config({"run_name": "SocialAgent"})
     
     return agent_executor
 
 
 # --- 4d. General Agent (Fallback) ---
+# --- vvv MODIFIED: Switched to DuckDuckGo vvv ---
 GENERAL_AGENT_PROMPT_TEMPLATE = """
 You are a helpful assistant.
 Your goal is to provide helpful, conversational answers to the user's question.
-You can also provide definitions for US Census terms using your tools.
+You have tools for looking up specific US Census definitions and for general web searches.
 
 Here are the available tools:
 {tools}
 
 Use the following format:
-Thought: Do I need to use a tool?
+
+Thought: The user is asking about a specific US Census term. I should use `get_census_data_definition`.
 Action:
 ```json
 {{
@@ -546,22 +545,55 @@ Action:
   "action_input": {{"term": "..."}}
 }}
 ```
+Observation: (The tool's output)
+Thought: I have the definition. I will now answer the user.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "The definition for that term is: ..."
+}}
+```
+
 (or)
-Thought: I don't need a tool.
+
+Thought: The user is asking a general knowledge or real-time question (like 'what is the weather?' or 'what is a good marketing strategy?'). I should use `DuckDuckGoSearchRun`.
+Action:
+```json
+{{
+  "action": "DuckDuckGoSearchRun",
+  "action_input": {{"query": "weather in New York today"}}
+}}
+```
+Observation: (The tool's output, e.g., "The weather in New York is...")
+Thought: I have the search result. I will now answer the user.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "According to a web search, the weather in New York today is..."
+}}
+```
+
+(or)
+
+Thought: The user is asking 'what is the weather' but hasn't provided a location. I must ask for a location before I can use the `DuckDuckGoSearchRun` tool.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "I can certainly help with that! Could you please tell me your city and state, or a zip code, so I can get you the correct weather forecast?"
+}}
+```
+
+(or)
+
+Thought: The user is just chatting or asking a question I can answer from my own knowledge. I don't need a tool.
 Action:
 ```json
 {{
   "action": "Final Answer",
   "action_input": "The helpful answer to the user."
-}}
-```
-Observation: The result from the tool.
-Thought: I now have the final answer.
-Action:
-```json
-{{
-  "action": "Final Answer",
-  "action_input": "The final answer to the user"
 }}
 ```
 
@@ -580,7 +612,17 @@ general_agent_prompt = PromptTemplate(
 )
 
 def create_general_agent_chain():
+    # Start with the default census tool
     tools = [get_census_data_definition]
+    
+    # --- NEW: Add DuckDuckGo Search tool ---
+    try:
+        from langchain_community.tools import DuckDuckGoSearchRun
+        duckduckgo_tool = DuckDuckGoSearchRun(name="DuckDuckGoSearchRun")
+        tools.append(duckduckgo_tool)
+    except Exception as e:
+        print(f"Error initializing DuckDuckGoSearch tool: {e}")
+    # --- END NEW ---
     
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
@@ -597,10 +639,11 @@ def create_general_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=False, # <-- MODIFIED: Set to False
     ).with_config({"run_name": "GeneralAgent"})
     
     return agent_executor
+# --- ^^^ MODIFIED: Switched to DuckDuckGo ^^^ ---
 
 # --- vvv MODIFIED FUNCTION vvv ---
 def get_followup_questions(user_query: str, chat_history: List, data_summary: str, data_stats: str) -> List[str]:
@@ -749,7 +792,9 @@ for i, message in enumerate(st.session_state.messages): # <-- Add enumerate
                     with cols[j % 3]:
                         if st.button(q, key=f"followup_{i}_{j}"): # Unique key
                             st.session_state.clicked_prompt = q
-                            st.rerun()
+                            # --- vvv MODIFIED: Removed st.rerun() ---
+                            # st.rerun() 
+                            # --- ^^^ MODIFIED ^^^ ---
 # --- ^^^ MODIFIED HISTORY RENDER ^^^ ---
 
 
@@ -760,7 +805,6 @@ prompt_from_input = st.chat_input("What would you like to know?")
 
 # Check if a button was clicked in the last run
 prompt_from_button = st.session_state.clicked_prompt
-st.session_state.clicked_prompt = None # Clear it immediately
 
 # Decide which prompt to use
 prompt = prompt_from_input or prompt_from_button
@@ -770,6 +814,11 @@ prompt = prompt_from_input or prompt_from_button
 
 # React to user input
 if prompt:
+    
+    # --- vvv MODIFIED: Clear button prompt *after* using it vvv ---
+    if prompt_from_button:
+        st.session_state.clicked_prompt = None
+    # --- ^^^ MODIFIED ^^^ ---
     
     st.session_state.messages.append({"role": "user", "content": prompt})
     
@@ -817,6 +866,7 @@ if prompt:
                 data_stats = None     # <-- NEW: Variable to hold the stats
                 followup_questions = [] # Variable to hold questions
                 
+                # --- vvv MODIFIED: ADDED OutputParserException catch vvv ---
                 try:
                     response = branch.invoke(chain_input, config=config)
                     
@@ -825,39 +875,59 @@ if prompt:
                     else:
                         # This handles output from all agents now
                         final_answer = response.get("output", "I'm sorry, I encountered an error.")
-                    
-                    # --- vvv MODIFIED: Check for viz_url, summary, and stats vvv ---
-                    if st.session_state.temp_viz_url:
-                        viz_url = st.session_state.temp_viz_url
-                        st.session_state.temp_viz_url = None # Clear it
-                        
-                    if st.session_state.temp_data_summary:
-                        data_summary = st.session_state.temp_data_summary
-                        st.session_state.temp_data_summary = None # Clear it
-                    
-                    if st.session_state.temp_data_stats: # <-- NEW
-                        data_stats = st.session_state.temp_data_stats
-                        st.session_state.temp_data_stats = None # Clear it
-                    # --- ^^^ MODIFIED ^^^ ---
+                
+                except OutputParserException as e:
+                    st.warning("The agent's response wasn't formatted perfectly, but I recovered this answer:")
+                    # This is the fallback: use the raw LLM output
+                    final_answer = str(e.llm_output) if hasattr(e, 'llm_output') else str(e)
 
-                    # --- vvv MODIFIED: Generate follow-up questions with stats vvv ---
-                    if (route and route.destination == 'looker' and 
-                        data_summary and data_stats and # <-- Check for stats
-                        not final_answer.startswith("I'm sorry")):
-                        
-                        with st.spinner("Generating follow-up questions..."):
-                            followup_questions = get_followup_questions(
-                                user_query=prompt,
-                                chat_history=chat_history_list,
-                                data_summary=data_summary,
-                                data_stats=data_stats # <-- Pass stats
-                            )
-                    # --- ^^^ MODIFIED ^N^ ---
-                    
                 except Exception as e:
-                    st.error(f"An error occurred: {e}")
-                    final_answer = "I'm sorry, I'm having trouble processing that request."
+                    # --- vvv NEW: Check if the generic exception is a wrapped parsing error vvv ---
+                    error_str = str(e)
+                    if "Could not parse LLM output:" in error_str:
+                        st.warning("The agent's response wasn't formatted perfectly, but I recovered this answer:")
+                        try:
+                            # Extract the raw text after the "Could not parse LLM output:" part
+                            final_answer = error_str.split("Could not parse LLM output:")[1].split("For troubleshooting, visit:")[0].strip()
+                        except Exception:
+                            final_answer = "I'm sorry, I'm having trouble processing that request, and I couldn't recover the raw output."
+                    elif hasattr(e, 'llm_output'):
+                        st.warning("The agent's response wasn't formatted perfectly (Exception w/ llm_output), but I recovered this answer:")
+                        final_answer = str(e.llm_output)
+                    # --- ^^^ NEW ^^^ ---
+                    else:
+                        st.error(f"An error occurred: {e}")
+                        final_answer = "I'm sorry, I'm having trouble processing that request."
+                # --- ^^^ MODIFIED ^^^ ---
 
+                # --- vvv MODIFIED: Check for viz_url, summary, and stats vvv ---
+                if st.session_state.temp_viz_url:
+                    viz_url = st.session_state.temp_viz_url
+                    st.session_state.temp_viz_url = None # Clear it
+                    
+                if st.session_state.temp_data_summary:
+                    data_summary = st.session_state.temp_data_summary
+                    st.session_state.temp_data_summary = None # Clear it
+                
+                if st.session_state.temp_data_stats: # <-- NEW
+                    data_stats = st.session_state.temp_data_stats
+                    st.session_state.temp_data_stats = None # Clear it
+                # --- ^^^ MODIFIED ^^^ ---
+
+                # --- vvv MODIFIED: Generate follow-up questions with stats vvv ---
+                if (route and route.destination == 'looker' and 
+                    data_summary and data_stats and # <-- Check for stats
+                    not final_answer.startswith("I'm sorry")):
+                    
+                    with st.spinner("Generating follow-up questions..."):
+                        followup_questions = get_followup_questions(
+                            user_query=prompt,
+                            chat_history=chat_history_list,
+                            data_summary=data_summary,
+                            data_stats=data_stats # <-- Pass stats
+                        )
+                # --- ^^^ MODIFIED ^N^ ---
+                    
             # --- vvv MODIFIED: Render text, then thoughts, then iframe, then follow-ups vvv ---
             
             # 1. Render the main answer
@@ -882,7 +952,7 @@ if prompt:
                         with cols[i % 3]:
                             if st.button(q, key=f"followup_new_{i}"): # Use a unique key
                                 st.session_state.clicked_prompt = q
-                                st.rerun()
+                                # This will cause the rerun
             # --- ^^^ MODIFIED ^^^ ---
         
             # --- vvv MODIFIED: Append new dictionary with followups AND thoughts vvv ---
@@ -900,4 +970,9 @@ if prompt:
                 not final_answer.startswith("I'm sorry") and 
                 not final_answer.startswith("There is no data")):
                 st.rerun()
+
+    # --- vvv NEW: Rerun if a button was clicked vvv ---
+    if prompt_from_button:
+        st.rerun()
+    # --- ^^^ NEW ^^^ ---
 
