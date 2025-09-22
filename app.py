@@ -98,16 +98,16 @@ try:
     
     # --- MODIFICATION: llm_pro for heavy tasks ---
     llm_pro = ChatGoogleGenerativeAI(
-        model="gemini-2.5-pro", 
-        google_api_key=GOOGLE_API_KEY,
+        model="gemini-2.5-pro", # <-- FIX: Use a more powerful model for complex agents
+        google_api_key=GOOGLE_API_KEY, 
         temperature=0,
         convert_system_message_to_human=True
     )
     
     # --- MODIFICATION: llm_flash for lighter, faster tasks ---
     llm_flash = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash", # Using the exact model name
-        google_api_key=GOOGLE_API_KEY,
+        model="gemini-2.5-flash", # <-- FIX: Use a valid, recommended model name
+        google_api_key=GOOGLE_API_KEY, 
         temperature=0,
         convert_system_message_to_human=True
     )
@@ -185,6 +185,8 @@ Your primary task is to answer the user's question by analyzing a pandas DataFra
 - **DO NOT** assume `df` is already loaded. You must load it *every time* you start.
 - The pandas library is available as `pd`.
 - Your final answer should be conversational, explaining what you found.
+
+**CRITICAL: Your final response to the user MUST be a single JSON object with the action "Final Answer" and the full, conversational response in the "action_input" field. DO NOT output raw text.**
 
 Here are the tools you must use:
 {tools}
@@ -269,8 +271,9 @@ def create_python_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=False, # <-- MODIFIED: Set to False
-        return_intermediate_steps=True 
+        handle_parsing_errors=True, # <-- MODIFIED: Set to True
+        return_intermediate_steps=True,
+        max_iterations=8 # Limit retries to prevent getting stuck
     ).with_config({"run_name": "PythonAgent"})
     
     return agent_executor
@@ -278,10 +281,17 @@ def create_python_agent_chain():
 
 
 # --- 4b. Looker Agent ---
+# --- vvv MODIFIED: Added ANALYST STRATEGY vvv ---
 LOOKER_AGENT_PROMPT_TEMPLATE = """
 You are an expert assistant for US Census data. You have two tools:
 1.  `LookerDataQuery`: To get data and visualizations.
 2.  `get_census_data_definition`: To define terms.
+
+**ANALYST STRATEGY:**
+-   You are a senior data analyst. Your goal is to answer the user's question with the *most relevant* data.
+-   **If the user asks a strategic question (e.g., "where should I open a bookstore?", "who should I market to?"), DO NOT just query `blockgroup.total_pop`.**
+-   Instead, THINK about what data implies a good market. For a bookstore, good fields would be `blockgroup.bachelors_degree`, `blockgroup.masters_degree`, or `blockgroup.median_income_dim`.
+-   Select fields that *actually* answer the user's strategic question, not just the most basic ones.
 
 **STRATEGY FOR `LookerDataQuery`:**
 -   You MUST provide a `vis_config_string` (a JSON string).
@@ -311,38 +321,39 @@ Use the following format for your thoughts and actions.
 
 Thought:
 The user is asking for...
-I need to use the `LookerDataQuery` tool.
-I will select the fields...
-For the visualization, the user wants to compare values, so I will use a column chart: `'{{\"type\": \"looker_column\"}}'`.
+(e.g., "marketing campaign for bookstores")
+My analyst strategy says not to just use 'total_pop'. A better metric for bookstores is education level.
+I will query for `state.state_name`, `blockgroup.bachelors_degree`, and `blockgroup.masters_degree`.
+I will sort by the total of these degrees (the tool does not support sorting by a sum, so I will just sort by bachelors_degree desc as a proxy).
+For the visualization, a column chart is best to compare states.
 
 Action:
 ```json
 {{
   "action": "LookerDataQuery",
   "action_input": {{
-    "fields": ["field_name_1", "field_name_2"],
-    "filters": {{"some_field": "some_value"}},
-    "sorts": ["field_name_1"],
+    "fields": ["state.state_name", "blockgroup.bachelors_degree", "blockgroup.masters_degree"],
+    "filters": {{}},
+    "sorts": ["blockgroup.bachelors_degree desc"],
     "vis_config_string": "{{\"type\": \"looker_column\"}}"
   }}
 }}
 ```
 Observation:
-(The tool's JSON output, e.g., {{"summary": "Successfully queried 52 rows.", "viz_url": "https://...", "data_preview": "[...]", "data_stats": "{{\"blockgroup.total_pop\": {{\"mean\": 600000, ...}} }}" }})
+(The tool's JSON output, e.g., {{"summary": "Successfully queried 52 rows.", "viz_url": "https://...", "data_preview": "[...]", "data_stats": "{{\"blockgroup.bachelors_degree\": {{\"mean\": 800000, ...}} }}" }})
 
 Thought:
 The tool ran successfully. My job is to generate a detailed summary and insight.
 The user's query was: '{input}'
 The tool's summary is: 'Successfully queried 52 rows.'
-The data preview is: '[{{\"state.name\": \"California\", ...}}]'
-The data stats are: '{{\"blockgroup.total_pop\": {{\"mean\": 600000, \"min\": 100, \"max\": 39000000, ...}} }}'
-I will use this data_stats and data_preview to generate a specific insight.
+The data stats show: '{{\"blockgroup.bachelors_degree\": {{\"mean\": 800000, \"min\": 67000, \"max\": 5400000, ...}} }}'
+I will use these stats to give a specific insight.
 
 Action:
 ```json
 {{
   "action": "Final Answer",
-  "action_input": "### Summary\n\nI've successfully retrieved the data for '{input}' ({{"summary"}}). This data, which is now cached, provides a breakdown of [describe what the data is, e.g., population by state] across the United States. The chart is displayed below.\n\n### Insights\n\nBased on a statistical summary of the data, I can see [describe the specific insight from data_stats, e.g., 'the average population per state is 600,000, with a maximum of 39,000,000']. This highlights the wide variation in population density. The data is cached, so you can now ask analysis questions."
+  "action_input": "### Summary\n\nTo help with your marketing campaign, I've retrieved data on the number of residents with Bachelor's and Master's degrees for all US states ({{"summary"}}). This provides a view of the potential market based on higher education levels. The chart is displayed below.\n\n### Insights\n\nBased on the data, the average number of Bachelor's degree holders per state is about 800,000, but this varies wildly from a low of 67,000 to a high of 5.4 million. States with a high number of graduates, like California (as seen in the preview), represent a large potential market. Focusing your campaign on states with a high *number* of degree holders could be a great strategy."
 }}
 ```
 
@@ -355,6 +366,7 @@ Begin!
 Thought:
 {agent_scratchpad}
 """
+# --- ^^^ MODIFIED: Added ANALYST STRATEGY ^^^ ---
 
 def run_looker_tool_and_save_url(
     fields: List[str], 
@@ -453,11 +465,11 @@ def create_looker_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=False, # <-- MODIFIED: Set to False
+        handle_parsing_errors=True, # <-- MODIFIED: Set to True
+        max_iterations=8 # Limit retries to prevent getting stuck
     ).with_config({"run_name": "LookerAgent"})
     
     return agent_executor
-
 
 # --- 4c. Social Agent ---
 SOCIAL_AGENT_PROMPT_TEMPLATE = """
@@ -519,7 +531,8 @@ def create_social_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=False, # <-- MODIFIED: Set to False
+        handle_parsing_errors=True, # <-- MODIFIED: Set to True
+        max_iterations=8 # Limit retries to prevent getting stuck
     ).with_config({"run_name": "SocialAgent"})
     
     return agent_executor
@@ -532,17 +545,61 @@ You are a helpful assistant.
 Your goal is to provide helpful, conversational answers to the user's question.
 You have tools for looking up specific US Census definitions and for general web searches.
 
+**CRITICAL: Your final response to the user MUST be a single JSON object with the action "Final Answer" and the full, conversational response in the "action_input" field. DO NOT output raw text.**
+
+**MULTI-STEP PLAN STRATEGY:**
+- If a user's question requires multiple pieces of information (e.g., "weather in New York and events in Los Angeles"), your first 'Thought' MUST be to create a numbered plan.
+- At each step, review your plan and the 'Observation' from your previous action.
+- Execute the *next* step in your plan until you have all the information.
+- Once all information is gathered, synthesize it into a final answer.
+
+Here is an example of a multi-step plan:
+Thought: The user wants marketing ideas for two cities based on weather and events. I need to create a plan.
+1. Search for weather in New York City this week.
+2. Search for events in New York City this month.
+3. Search for weather in Los Angeles this week.
+4. Search for events in Los Angeles this month.
+5. Synthesize all information into a final answer.
+I will start with step 1.
+Action:
+```json
+{{
+  "action": "DuckDuckGoSearchRun",
+  "action_input": {{"query": "weather in New York City this week"}}
+}}
+```
+Observation: (Weather result for NYC)
+Thought: I have completed step 1 of my plan. Now I will execute step 2.
+Action:
+```json
+{{
+  "action": "DuckDuckGoSearchRun",
+  "action_input": {{"query": "events in New York City this month"}}
+}}
+```
+Observation: (Events result for NYC)
+Thought: I have completed step 2. Now for step 3, the weather in LA.
+(Continue until all steps are complete)
+Thought: I have gathered all the information for both cities. Now I will synthesize this into a comprehensive marketing plan for the user.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "Here are some marketing ideas for New York and Los Angeles..."
+}}
+```
+
 Here are the available tools:
 {tools}
 
 Use the following format:
 
-Thought: The user is asking about a specific US Census term. I should use `get_census_data_definition`.
+Thought: (Your reasoning and plan)
 Action:
 ```json
 {{
-  "action": "get_census_data_definition",
-  "action_input": {{"term": "..."}}
+  "action": "Your chosen tool",
+  "action_input": {{"parameter": "value"}}
 }}
 ```
 Observation: (The tool's output)
@@ -577,12 +634,12 @@ Action:
 
 (or)
 
-Thought: The user is asking 'what is the weather' but hasn't provided a location. I must ask for a location before I can use the `DuckDuckGoSearchRun` tool.
+Thought: The user's request is ambiguous or missing information needed for a tool (e.g., asking for a search without a clear topic). I need to ask a clarifying question before I can proceed.
 Action:
 ```json
 {{
   "action": "Final Answer",
-  "action_input": "I can certainly help with that! Could you please tell me your city and state, or a zip code, so I can get you the correct weather forecast?"
+  "action_input": "I can help with that, but I need a little more information. Could you please clarify your request?"
 }}
 ```
 
@@ -639,7 +696,8 @@ def create_general_agent_chain():
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=False, # <-- MODIFIED: Set to False
+        handle_parsing_errors=True, # <-- MODIFIED: Set to True
+        max_iterations=8 # Limit retries to prevent getting stuck
     ).with_config({"run_name": "GeneralAgent"})
     
     return agent_executor
@@ -746,7 +804,7 @@ def setup_sidebar():
 
 # --- Main Page ---
 st.set_page_config(page_title="Semantic Chatbot", layout="wide")
-st.title("Semantic Chatbot 🤖")
+st.title("Bob 🤖")
 
 # --- Setup Sidebar ---
 setup_sidebar()
@@ -866,8 +924,8 @@ if prompt:
                 data_stats = None     # <-- NEW: Variable to hold the stats
                 followup_questions = [] # Variable to hold questions
                 
-                # --- vvv MODIFIED: ADDED OutputParserException catch vvv ---
-                try:
+                # --- vvv FIX: Add specific catch for OutputParserException to prevent loops ---
+                try: 
                     response = branch.invoke(chain_input, config=config)
                     
                     if isinstance(response, str):
@@ -877,28 +935,24 @@ if prompt:
                         final_answer = response.get("output", "I'm sorry, I encountered an error.")
                 
                 except OutputParserException as e:
-                    st.warning("The agent's response wasn't formatted perfectly, but I recovered this answer:")
-                    # This is the fallback: use the raw LLM output
-                    final_answer = str(e.llm_output) if hasattr(e, 'llm_output') else str(e)
-
-                except Exception as e:
-                    # --- vvv NEW: Check if the generic exception is a wrapped parsing error vvv ---
-                    error_str = str(e)
-                    if "Could not parse LLM output:" in error_str:
-                        st.warning("The agent's response wasn't formatted perfectly, but I recovered this answer:")
-                        try:
-                            # Extract the raw text after the "Could not parse LLM output:" part
-                            final_answer = error_str.split("Could not parse LLM output:")[1].split("For troubleshooting, visit:")[0].strip()
-                        except Exception:
-                            final_answer = "I'm sorry, I'm having trouble processing that request, and I couldn't recover the raw output."
-                    elif hasattr(e, 'llm_output'):
-                        st.warning("The agent's response wasn't formatted perfectly (Exception w/ llm_output), but I recovered this answer:")
-                        final_answer = str(e.llm_output)
-                    # --- ^^^ NEW ^^^ ---
+                    # The agent can sometimes get stuck in a loop if it fails to format
+                    # its final answer correctly. This catches the error after retries
+                    # and attempts to display the raw, unparsed output as a fallback.
+                    st.warning("The agent's response was not formatted correctly. Displaying raw output.")
+                    error_text = str(e)
+                    if "Got: " in error_text:
+                        final_answer = error_text.split("Got: ")[-1].strip()
                     else:
-                        st.error(f"An error occurred: {e}")
-                        final_answer = "I'm sorry, I'm having trouble processing that request."
-                # --- ^^^ MODIFIED ^^^ ---
+                        final_answer = error_text
+                    # This catches parsing errors after the agent has retried and failed.
+                    # It prevents the app from crashing and displays the raw, unparsed output.
+                    st.warning("The agent's response was not formatted correctly. Displaying raw output as a fallback.")
+                    # The raw LLM output is often in the `llm_output` attribute of the exception.
+                    final_answer = getattr(e, 'llm_output', str(e))
+                
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+                    final_answer = "I'm sorry, I'm having trouble processing that request."
 
                 # --- vvv MODIFIED: Check for viz_url, summary, and stats vvv ---
                 if st.session_state.temp_viz_url:
@@ -975,4 +1029,3 @@ if prompt:
     if prompt_from_button:
         st.rerun()
     # --- ^^^ NEW ^^^ ---
-
