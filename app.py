@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import io
 import os
+import ast  # <-- NEW: Added for parsing follow-up questions
 from pydantic import BaseModel, Field
 # --- FIX: Add List, Dict, Optional ---
-from typing import Literal, List, Dict, Optional
+from typing import Literal, List, Dict, Optional, Any, Union
 import json 
 # --- ADDED: We need StructuredTool ---
 from langchain_core.tools import StructuredTool
@@ -12,7 +13,7 @@ from langchain_core.tools import StructuredTool
 from streamlit import components
 
 # --- LLM Imports ---
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import ChatGoogleGenerativeAI # <-- FIX: Corrected typo
 
 # --- Langchain Core Imports ---
 from langchain_core.prompts import PromptTemplate
@@ -22,13 +23,59 @@ from langchain.agents import create_react_agent, AgentExecutor, create_structure
 from langchain import hub
 from langchain_experimental.tools.python.tool import PythonREPLTool
 from langchain_core.tools import render_text_description
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+# --- NEW: Import for Callback Handler ---
+from langchain_core.callbacks.base import BaseCallbackHandler
 
 # --- Tool Imports ---
 from tools.looker_tool import looker_data_tool
 from tools.knowledge_tool import get_census_data_definition
 from tools.social_tool import get_profile_data
 from tools.cache_tool import load_df_from_cache, save_data_to_cache
+
+# ==============================================================================
+# 0. Custom Callback Handler
+# ==============================================================================
+
+class StreamlitCallbackHandler(BaseCallbackHandler):
+    """A callback handler that writes agent thoughts to a list."""
+    
+    def __init__(self):
+        super().__init__()
+        self.thoughts = []
+
+    def on_chain_start(
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+    ) -> None:
+        """Log the start of a chain."""
+        # --- vvv FIX: Add check for serialized ---
+        # Only log the start of the main agent chains
+        if serialized and "Agent" in serialized.get('name', ''):
+             self.thoughts.append(f"> Entering new {serialized.get('name', 'chain')}...")
+        # --- ^^^ FIX ---
+
+    def on_agent_action(
+        self, action: Any, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Log the agent's action."""
+        self.thoughts.append(f"Action: {action.tool}\nAction Input:\n```{action.tool_input}\n```")
+
+    def on_tool_end(
+        self, output: str, color: Optional[str] = None, **kwargs: Any
+    ) -> None:
+        """Log the tool's output."""
+        self.thoughts.append(f"Observation: {output}")
+        
+    def on_llm_end(self, response: Any, **kwargs: Any) -> None:
+        """Log the LLM's thought process."""
+        try:
+            if response.generations:
+                # This usually contains the 'Thought:'
+                generation_text = response.generations[0][0].text
+                if generation_text:
+                    self.thoughts.append(generation_text)
+        except Exception:
+            pass # Ignore if we can't parse
 
 # ==============================================================================
 # 1. Initialize LLM
@@ -116,43 +163,66 @@ router = router_prompt | llm_flash | parser
 # ==============================================================================
 
 # --- 4a. Python Agent ---
+# --- vvv MODIFIED: Switched to Structured Chat Agent & updated prompt vvv ---
 PYTHON_AGENT_PROMPT_TEMPLATE = """
 You are an expert Python data analyst. You have access to a Python REPL tool.
-Your first step is to load the cached data. The data is stored in a file named "data.csv".
-You MUST load this file into a pandas DataFrame named `df`.
-The pandas library is available to you as `pd`.
+Your primary task is to answer the user's question by analyzing a pandas DataFrame named `df`.
 
-Example loading code:
-```python
-import pandas as pd
-df = pd.read_csv("data.csv")
-print(df.head())
-```
+**CRITICAL CONTEXT:**
+- A pandas DataFrame named `df` has **ALREADY BEEN LOADED** into memory for you.
+- Your **ONLY** job is to write Python code that *uses* this existing `df` variable.
+- **DO NOT** use `pd.read_csv("data.csv")`. It is unnecessary and will fail.
+- The pandas library is available as `pd`.
+- Your final answer should be conversational, explaining what you found.
 
-After loading the data, your task is to write and execute Python code to answer the user's question using the `df` dataframe.
-- You MUST end your final code block with a `print()` statement
-  containing the result or answer.
-- Do not install any packages.
-
-Here are the available tools:
+Here are the tools you must use:
 {tools}
 
-Use the following format:
-Thought: I need to load the data, then write Python code to answer the user's question.
-Action: The action to take, should be one of [{tool_names}]
-Action Input: 
-```python
-# Your python code here
-# (e.g., df = pd.read_csv("data.csv"))
-# (e.g., print(df.some_method()))
+Here are the names of your tools: {tool_names}
+
+Use the following format for your thoughts and actions.
+(You MUST use this format. Do not just output the final answer.)
+
+Thought:
+The user is asking for...
+My first step is to inspect the `df` DataFrame to see the column names, as I must not assume them.
+Action:
+```json
+{{
+  "action": "Python_REPL",
+  "action_input": "print(df.columns)"
+}}
 ```
-Observation: The result of your code.
-... (this thought/action/observation can repeat)
-Thought: I now have the final answer.
-Final Answer: The final answer to the user
+Observation:
+(The tool's output, e.g., "Index(['state.state_name', ...])")
+
+Thought:
+Okay, I have the correct column names (e.g., 'state.state_name', 'blockgroup.bachelors_degree').
+Now I will write the code to perform the calculation and print the result.
+Action:
+```json
+{{
+  "action": "Python_REPL",
+  "action_input": "result = df['blockgroup.bachelors_degree'].mean()\nprint(result)"
+}}
+```
+Observation:
+(The tool's output, e.g., "12345.67")
+
+Thought:
+I have the final numerical result. Now I will provide a conversational answer.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "I've finished the analysis. The average number of residents with a bachelor's degree is 12,345.67."
+}}
+```
+
+CHAT HISTORY:
+{chat_history}
 
 USER INPUT: {input}
-CHAT HISTORY: {chat_history}
 
 Begin!
 Thought:
@@ -169,7 +239,16 @@ def create_python_agent_chain():
     if not os.path.exists("data.csv"):
         return (lambda x: "There is no data cached to analyze. Please run a Looker query first.")
 
-    tools = [PythonREPLTool(locals={"pd": pd})]
+    # Load the df into memory *once*
+    df = load_df_from_cache.func(file_path="data.csv")
+    
+    # --- vvv NEW: Add check for None DataFrame vvv ---
+    if df is None:
+        return (lambda x: "Could not load data.csv. The file might be empty or corrupt. Please run a Looker query first.")
+    # --- ^^^ NEW ^^^ ---
+    
+    # Provide the loaded df to the tool's local scope
+    tools = [PythonREPLTool(locals={"pd": pd, "df": df})]
     
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
@@ -179,17 +258,19 @@ def create_python_agent_chain():
         tool_names=tool_names
     )
     
-    # --- MODIFICATION: Use llm_pro for Python Agent ---
-    agent = create_react_agent(llm_pro, tools, prompt_with_vars)
+    # --- MODIFICATION: Use llm_pro and create_structured_chat_agent ---
+    agent = create_structured_chat_agent(llm_pro, tools, prompt_with_vars)
     
     agent_executor = AgentExecutor(
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=True,
+        return_intermediate_steps=True # Still return steps for the expander
     ).with_config({"run_name": "PythonAgent"})
     
     return agent_executor
+# --- ^^^ MODIFIED: Switched to Structured Chat Agent & added df check ^^^ ---
 
 
 # --- 4b. Looker Agent ---
@@ -205,11 +286,16 @@ You are an expert assistant for US Census data. You have two tools:
 -   Use `'{{\"type\": \"single_value\"}}'` for single-number answers (e.g., "total population of US").
 
 **STRATEGY FOR FINAL ANSWER:**
--   Your tool will return a JSON object with a "summary" and a "viz_url".
--   Your "Final Answer" to the user should be a friendly, conversational confirmation.
--   Start with the "summary" text (e.g., "Successfully queried 52 rows...").
--   Then, add a one-sentence insight or prompt for the next step (e.g., "This data is now cached, so you can ask me to analyze it.")
--   **DO NOT** include the "viz_url" or any markdown links. The app will display the visualization automatically.
+-   Your tool will return a JSON object with:
+    1.  "summary" (e.g., "Successfully queried 52 rows...")
+    2.  "viz_url" (e.g., "https://...")
+    3.  "data_preview" (a JSON string of the first 5 rows, e.g., "[{{\"state.name\": \"California\", ...}}]")
+    4.  "data_stats" (a JSON string of `df.describe()`, e.g., "{{\"blockgroup.total_pop\": {{\"mean\": 600000, \"min\": 100, \"max\": 39000000, ...}} }}")
+-   Your "Final Answer" to the user must be a 1-2 paragraph response, formatted in MARKDOWN with two headings: '### Summary' and '### Insights'.
+-   Under '### Summary', describe the data that was retrieved, incorporating the "summary" text from the tool.
+-   Under '### Insights', use the "data_stats" (for min/max/mean) and "data_preview" (for string examples) to provide a brief, *specific* analysis.
+-   **DO NOT** include the "viz_url", "data_preview", or "data_stats" in your final answer. The app will display the visualization automatically.
+-   **DO NOT** suggest follow-up questions. This will be handled by another part of the system.
 
 Here are the tools you must use:
 {tools}
@@ -224,8 +310,6 @@ The user is asking for...
 I need to use the `LookerDataQuery` tool.
 I will select the fields...
 For the visualization, the user wants to compare values, so I will use a column chart: `'{{\"type\": \"looker_column\"}}'`.
-(or)
-For the visualization, the user wants a single number, so I will use: `'{{\"type\": \"single_value\"}}'`.
 
 Action:
 ```json
@@ -240,21 +324,21 @@ Action:
 }}
 ```
 Observation:
-(The tool's JSON output, e.g., {{"summary": "Successfully queried 52 rows.", "viz_url": "https://..."}})
+(The tool's JSON output, e.g., {{"summary": "Successfully queried 52 rows.", "viz_url": "https://...", "data_preview": "[...]", "data_stats": "{{\"blockgroup.total_pop\": {{\"mean\": 600000, ...}} }}" }})
 
 Thought:
-The tool ran successfully and provided a summary. My job is to take that summary and make it more conversational and insightful.
-The user's original query was: {input}
-The summary is: (e.g., "Successfully queried 52 rows.")
-
-This query implies an interest in comparisons (e.g., male vs. female, or values by state).
-I will confirm I've retrieved the data for their query and suggest a *specific* next-step analysis that is relevant to their question.
+The tool ran successfully. My job is to generate a detailed summary and insight.
+The user's query was: '{input}'
+The tool's summary is: 'Successfully queried 52 rows.'
+The data preview is: '[{{\"state.name\": \"California\", ...}}]'
+The data stats are: '{{\"blockgroup.total_pop\": {{\"mean\": 600000, \"min\": 100, \"max\": 39000000, ...}} }}'
+I will use this data_stats and data_preview to generate a specific insight.
 
 Action:
 ```json
 {{
   "action": "Final Answer",
-  "action_input": "I've successfully retrieved the data for '{input}' ({{"summary"}}). This data is now cached and the chart is displayed below. Since the data is ready, you can now ask me to perform analysis, like 'which state has the highest population' or 'what is the male-to-female ratio'!"
+  "action_input": "### Summary\n\nI've successfully retrieved the data for '{input}' ({{"summary"}}). This data, which is now cached, provides a breakdown of [describe what the data is, e.g., population by state] across the United States. The chart is displayed below.\n\n### Insights\n\nBased on a statistical summary of the data, I can see [describe the specific insight from data_stats, e.g., 'the average population per state is 600,000, with a maximum of 39,000,000']. This highlights the wide variation in population density. The data is cached, so you can now ask analysis questions."
 }}
 ```
 
@@ -268,8 +352,6 @@ Thought:
 {agent_scratchpad}
 """
 
-# --- NEW: Wrapper function to capture viz_url ---
-# --- FIX: The signature MUST match the original tool's args_schema (LookerQueryInput) ---
 def run_looker_tool_and_save_url(
     fields: List[str], 
     filters: Optional[Dict[str, str]] = None, 
@@ -279,15 +361,15 @@ def run_looker_tool_and_save_url(
 ):
     """
     A wrapper that calls the looker_data_tool and saves 
-    the viz_url to the session state.
+    the viz_url and data_summary to the session state.
+    It also reads the newly cached data and passes a preview and stats back to the agent.
     """
-    # --- FIX: Handle default Nones for filters and sorts ---
     if filters is None:
         filters = {}
     if sorts is None:
         sorts = []
 
-    # --- FIX: Call the original tool's function with the keyword arguments ---
+    # 1. Call the original tool. This saves "data.csv"
     result_str = looker_data_tool.func(
         fields=fields,
         filters=filters,
@@ -297,25 +379,46 @@ def run_looker_tool_and_save_url(
     )
     
     viz_url = None
+    data_summary = None
+    result_json = {} # Start with an empty dict
+    
     if isinstance(result_str, str):
         try:
+            # 2. Parse the tool's output (summary and viz_url)
             result_json = json.loads(result_str)
             viz_url = result_json.get("viz_url")
+            data_summary = result_json.get("summary")
             
-            # Save the URL to a temporary spot in session state
+            # 3. Save to session state for the UI
             if viz_url:
                 st.session_state["temp_viz_url"] = viz_url
+            if data_summary:
+                st.session_state["temp_data_summary"] = data_summary
+                
+            # --- vvv NEW: Load cache and add data preview AND stats vvv ---
+            # 4. Read the cache that the tool just saved
+            df = load_df_from_cache.func(file_path="data.csv")
+            if df is not None:
+                # 5. Get a preview and add it to the JSON for the agent
+                data_preview = df.head().to_json(orient='records')
+                result_json["data_preview"] = data_preview
+                
+                # 6. Get stats and add them to the JSON for the agent
+                data_stats = df.describe().to_json()
+                result_json["data_stats"] = data_stats
+                # --- Save stats for the followup generator ---
+                st.session_state["temp_data_stats"] = data_stats
+            # --- ^^^ END NEW ^^^ ---
                 
         except (json.JSONDecodeError, AttributeError) as e:
-            print(f"Wrapper could not parse viz_url: {e}")
+            print(f"Wrapper could not parse viz_url/summary: {e}")
+            result_json["error"] = str(e) # Add error to JSON
             
-    # Return the original string result to the agent
-    return result_str
-# --- END FIX ---
+    # 6. Return the *enhanced* JSON (with preview and stats) back to the agent
+    return json.dumps(result_json)
 
 def create_looker_agent_chain():
     
-    # --- MODIFICATION: Wrap the tool ---
     tools = [
         StructuredTool.from_function(
             func=run_looker_tool_and_save_url,
@@ -325,7 +428,6 @@ def create_looker_agent_chain():
         ),
         get_census_data_definition
     ]
-    # --- END MODIFICATION ---
     
     agent_prompt = PromptTemplate(
         template=LOOKER_AGENT_PROMPT_TEMPLATE,
@@ -364,11 +466,22 @@ Here are the available tools:
 
 Use the following format:
 Thought: I need to use the get_profile_data tool.
-Action: The action to take, should be one of [{tool_names}]
-Action Input: The LinkedIn profile URL from the user input.
+Action:
+```json
+{{
+  "action": "get_profile_data",
+  "action_input": {{"profile_url": "..."}}
+}}
+```
 Observation: The result from the tool.
 Thought: I now have the final answer.
-Final Answer: The profile data or an error message.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "The profile data or an error message."
+}}
+```
 
 USER INPUT: {input}
 CHAT HISTORY: {chat_history}
@@ -394,8 +507,8 @@ def create_social_agent_chain():
         tool_names=tool_names
     )
     
-    # --- MODIFICATION: Use llm_flash for Social Agent ---
-    agent = create_react_agent(llm_flash, tools, prompt_with_vars)
+    # --- MODIFICATION: Use llm_flash and create_structured_chat_agent ---
+    agent = create_structured_chat_agent(llm_flash, tools, prompt_with_vars)
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -418,11 +531,31 @@ Here are the available tools:
 
 Use the following format:
 Thought: Do I need to use a tool?
-Action: The action to take, should be one of [{tool_names}] (or 'No' if no tool is needed).
-Action Input: The input for the tool (e.g., 'poverty line')
+Action:
+```json
+{{
+  "action": "get_census_data_definition",
+  "action_input": {{"term": "..."}}
+}}
+```
+(or)
+Thought: I don't need a tool.
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "The helpful answer to the user."
+}}
+```
 Observation: The result from the tool.
 Thought: I now have the final answer.
-Final Answer: The final answer to the user
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "The final answer to the user"
+}}
+```
 
 USER INPUT: {input}
 CHAT HISTORY: {chat_history}
@@ -448,8 +581,8 @@ def create_general_agent_chain():
         tool_names=tool_names
     )
     
-    # --- MODIFICATION: Use llm_pro for General/Knowledge Agent ---
-    agent = create_react_agent(llm_pro, tools, prompt_with_vars)
+    # --- MODIFICATION: Use llm_pro and create_structured_chat_agent ---
+    agent = create_structured_chat_agent(llm_pro, tools, prompt_with_vars)
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -459,6 +592,63 @@ def create_general_agent_chain():
     ).with_config({"run_name": "GeneralAgent"})
     
     return agent_executor
+
+# --- vvv MODIFIED FUNCTION vvv ---
+def get_followup_questions(user_query: str, chat_history: List, data_summary: str, data_stats: str) -> List[str]:
+    """Generates 3 follow-up questions using llm_flash."""
+    
+    followup_prompt_template = """
+    You are an AI assistant. Based on the user's last query, the chat history, and the data that was just retrieved, generate 3 relevant follow-up questions.
+    
+    - The questions should be insightful and encourage further exploration of the data.
+    - The data has been cached, so questions can be about analysis (e.g., "what is the highest...", "compare X and Y...").
+    - Use the DATA STATS to ask specific questions about min/max/mean values.
+    - Return *only* a Python list of strings, e.g., ["question 1", "question 2", "question 3"].
+    - Do not add any other text, titles, or markdown.
+    
+    CHAT HISTORY:
+    {chat_history}
+    
+    USER'S LAST QUERY:
+    {user_query}
+    
+    DATA SUMMARY:
+    {data_summary}
+    
+    DATA STATS (df.describe()):
+    {data_stats}
+    
+    FOLLOW-UP QUESTIONS (as a Python list of strings):
+    """
+    
+    followup_prompt = PromptTemplate(
+        template=followup_prompt_template,
+        input_variables=["user_query", "chat_history", "data_summary", "data_stats"]
+    )
+    
+    # Use the fast model for this
+    chain = followup_prompt | llm_flash
+    
+    try:
+        response = chain.invoke({
+            "user_query": user_query,
+            "chat_history": chat_history, # Pass the list of Message objects
+            "data_summary": data_summary,
+            "data_stats": data_stats
+        })
+        
+        # Check if response has 'content' attribute (AIMessage) or is just a string
+        content = response.content if hasattr(response, 'content') else response
+        
+        # Safely evaluate the string to a list
+        questions = ast.literal_eval(content.strip())
+        if isinstance(questions, list):
+            return questions
+        return []
+    except Exception as e:
+        print(f"Error generating follow-up questions: {e}\nResponse was: {content}")
+        return []
+# --- ^^^ MODIFIED FUNCTION ^^^ ---
 
 # ==============================================================================
 # 5. Main Graph / Chain
@@ -509,91 +699,190 @@ st.title("Semantic Chatbot 🤖")
 # --- Setup Sidebar ---
 setup_sidebar()
 
-# --- FIX: Store messages as dictionaries to include viz_url ---
+# --- MODIFICATION: Store messages as dictionaries to include viz_url AND followup ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
-# --- NEW: Clear temp viz_url on page load ---
+    
+# --- NEW: Clear temp session state vars on page load ---
 if "temp_viz_url" not in st.session_state:
     st.session_state.temp_viz_url = None
+if "temp_data_summary" not in st.session_state:
+    st.session_state.temp_data_summary = None
+if "temp_data_stats" not in st.session_state: # <-- NEW
+    st.session_state.temp_data_stats = None
+# --- NEW: Add state for clickable prompts ---
+if "clicked_prompt" not in st.session_state:
+    st.session_state.clicked_prompt = None
 
+# --- vvv MODIFIED HISTORY RENDER vvv ---
 # Display chat messages from history on app rerun
-for message in st.session_state.messages:
+for i, message in enumerate(st.session_state.messages): # <-- Add enumerate
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        # --- NEW: If message has a viz_url, display it ---
+        
+        # --- NEW: If message has agent_thoughts, display them ---
+        if message.get("agent_thoughts"):
+            with st.expander("See my thought process..."):
+                st.code("\n".join(message["agent_thoughts"]), language="text")
+
+        # If message has a viz_url, display it
         if message.get("viz_url"):
-            # --- FIX: Use st.components.v1.iframe and remove invalid arg ---
             st.components.v1.iframe(message["viz_url"], height=600)
-# --- END FIX ---
+            
+        # --- NEW: If message has followup questions, display them as buttons ---
+        if message.get("followup"):
+            st.markdown("---")
+            st.markdown("**Suggested follow-up questions:**")
+            # Use columns for a cleaner layout
+            if len(message.get("followup")) > 0:
+                cols = st.columns(min(len(message.get("followup")), 3)) # Max 3 columns
+                for j, q in enumerate(message.get("followup")):
+                    with cols[j % 3]:
+                        if st.button(q, key=f"followup_{i}_{j}"): # Unique key
+                            st.session_state.clicked_prompt = q
+                            st.rerun()
+# --- ^^^ MODIFIED HISTORY RENDER ^^^ ---
+
+
+# --- vvv MODIFIED: Handle prompt from chat_input OR button click vvv ---
+if st.session_state.clicked_prompt:
+    prompt = st.session_state.clicked_prompt
+    st.session_state.clicked_prompt = None # Clear it after use
+else:
+    prompt = st.chat_input("What would you like to know?")
+# --- ^^^ MODIFIED ^^^ ---
+
 
 # React to user input
-if prompt := st.chat_input("What would you like to know?"):
-    # --- FIX: Store as dictionary ---
+if prompt:
+    
     st.session_state.messages.append({"role": "user", "content": prompt})
-    # --- NEW: Clear the temp viz_url before every new run ---
+    
+    # --- NEW: Clear *all* temp keys before every new run ---
     st.session_state.temp_viz_url = None
+    st.session_state.temp_data_summary = None
+    st.session_state.temp_data_stats = None # <-- NEW
     
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            
-            final_answer = ""
-            viz_url = None # Variable to hold the URL
-            route = None   # Variable to hold the route
-            
+        
+        # --- vvv MODIFIED: Show routing and expandable thoughts vvv ---
+        callback_handler = StreamlitCallbackHandler()
+        config = {"callbacks": [callback_handler]}
+        
+        with st.spinner("Routing query..."):
             try:
-                # --- FIX: Reconstruct message objects for the agent ---
+                # Reconstruct message objects for the agent
                 chat_history_list = []
                 for msg in st.session_state.messages[:-1]: # All but the new one
                     if msg["role"] == "user":
                         chat_history_list.append(HumanMessage(content=msg["content"]))
                     else:
                         chat_history_list.append(AIMessage(content=msg["content"]))
-                # --- END FIX ---
                 
                 chain_input = {"input": prompt, "chat_history": chat_history_list}
                 
-                route = router.invoke(chain_input)
+                route = router.invoke(chain_input, config=config)
                 chain_input["route"] = route
-                
-                response = branch.invoke(chain_input)
-                
-                if isinstance(response, str):
-                    final_answer = response
-                else:
-                    final_answer = response.get("output", "I'm sorry, I encountered an error.")
-                
-                # --- NEW IFRAME LOGIC ---
-                # Check if the wrapper function saved a URL
-                if st.session_state.temp_viz_url:
-                    viz_url = st.session_state.temp_viz_url
-                    st.session_state.temp_viz_url = None # Clear it
-                # --- END NEW IFRAME LOGIC ---
-                
+            
             except Exception as e:
-                st.error(f"An error occurred: {e}")
-                final_answer = "I'm sorry, I'm having trouble processing that request."
-
-        # Render text and iframe
-        st.markdown(final_answer)
-        if viz_url:
-            # --- FIX: Use st.components.v1.iframe and remove invalid arg ---
-            st.components.v1.iframe(viz_url, height=600)
+                st.error(f"Error during routing: {e}")
+                route = None # Set route to None to stop
         
-    
-    # --- FIX: Append the new dictionary to session state ---
-    st.session_state.messages.append({
-        "role": "assistant", 
-        "content": final_answer, 
-        "viz_url": viz_url # This will be None if it's not a Looker query
-    })
-    # --- END FIX ---
+        if route:
+            st.success(f"Routing to: {route.destination}")
+            
+            with st.spinner(f"Running {route.destination}..."):
+                
+                final_answer = ""
+                viz_url = None        # Variable to hold the URL
+                data_summary = None   # Variable to hold the summary
+                data_stats = None     # <-- NEW: Variable to hold the stats
+                followup_questions = [] # Variable to hold questions
+                
+                try:
+                    response = branch.invoke(chain_input, config=config)
+                    
+                    if isinstance(response, str):
+                        final_answer = response
+                    else:
+                        # This handles output from all agents now
+                        final_answer = response.get("output", "I'm sorry, I encountered an error.")
+                    
+                    # --- vvv MODIFIED: Check for viz_url, summary, and stats vvv ---
+                    if st.session_state.temp_viz_url:
+                        viz_url = st.session_state.temp_viz_url
+                        st.session_state.temp_viz_url = None # Clear it
+                        
+                    if st.session_state.temp_data_summary:
+                        data_summary = st.session_state.temp_data_summary
+                        st.session_state.temp_data_summary = None # Clear it
+                    
+                    if st.session_state.temp_data_stats: # <-- NEW
+                        data_stats = st.session_state.temp_data_stats
+                        st.session_state.temp_data_stats = None # Clear it
+                    # --- ^^^ MODIFIED ^^^ ---
 
-    # Rerun if it was a successful Looker query to update sidebar
-    if (route and route.destination == 'looker' and 
-        not final_answer.startswith("I'm sorry") and 
-        not final_answer.startswith("There is no data")):
-        st.rerun()
+                    # --- vvv MODIFIED: Generate follow-up questions with stats vvv ---
+                    if (route and route.destination == 'looker' and 
+                        data_summary and data_stats and # <-- Check for stats
+                        not final_answer.startswith("I'm sorry")):
+                        
+                        with st.spinner("Generating follow-up questions..."):
+                            followup_questions = get_followup_questions(
+                                user_query=prompt,
+                                chat_history=chat_history_list,
+                                data_summary=data_summary,
+                                data_stats=data_stats # <-- Pass stats
+                            )
+                    # --- ^^^ MODIFIED ^N^ ---
+                    
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+                    final_answer = "I'm sorry, I'm having trouble processing that request."
+
+            # --- vvv MODIFIED: Render text, then thoughts, then iframe, then follow-ups vvv ---
+            
+            # 1. Render the main answer
+            st.markdown(final_answer)
+            
+            # 2. Render the agent's thoughts
+            with st.expander("See my thought process..."):
+                st.code("\n".join(callback_handler.thoughts), language="text")
+            
+            # 3. Render the visualization
+            if viz_url:
+                st.components.v1.iframe(viz_url, height=600)
+            
+            # 4. Render the follow-up questions
+            if followup_questions:
+                st.markdown("---") # Add a separator
+                st.markdown("**Suggested follow-up questions:**")
+                # Use columns for a cleaner layout
+                if len(followup_questions) > 0:
+                    cols = st.columns(min(len(followup_questions), 3)) # Max 3 columns
+                    for i, q in enumerate(followup_questions):
+                        with cols[i % 3]:
+                            if st.button(q, key=f"followup_new_{i}"): # Use a unique key
+                                st.session_state.clicked_prompt = q
+                                st.rerun()
+            # --- ^^^ MODIFIED ^^^ ---
+        
+            # --- vvv MODIFIED: Append new dictionary with followups AND thoughts vvv ---
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": final_answer, 
+                "viz_url": viz_url,
+                "followup": followup_questions,
+                "agent_thoughts": callback_handler.thoughts # <-- NEW
+            })
+            # --- ^^^ MODIFIED ^^^ ---
+
+            # Rerun if it was a successful Looker query to update sidebar
+            if (route and route.destination == 'looker' and 
+                not final_answer.startswith("I'm sorry") and 
+                not final_answer.startswith("There is no data")):
+                st.rerun()
 
