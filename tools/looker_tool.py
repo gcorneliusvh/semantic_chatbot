@@ -28,12 +28,11 @@ def _get_explore_metadata():
         with open("acs_census_metadata.json") as f:
             return json.dumps(json.load(f))
     except FileNotFoundError:
-        # This is safe because it runs on import (main thread)
-        st.error("Fatal Error: acs_census_metadata.json not found.")
+        # Use print instead of st.error for agent compatibility
+        print("Fatal Error: acs_census_metadata.json not found.")
         return ""
     except Exception as e:
-        # This is safe because it runs on import (main thread)
-        st.error(f"Error loading acs_census_metadata.json: {e}")
+        print(f"Error loading acs_census_metadata.json: {e}")
         return ""
 
 EXPLORE_METADATA = _get_explore_metadata()
@@ -59,13 +58,11 @@ def _get_looker_sdk() -> looker_sdk.sdk.api40.methods.Looker40SDK:
         return sdk
     
     except KeyError as e:
-        # --- FIX: Replaced st.error with print ---
-        # Using st.error here will crash the agent thread.
-        print(f"ERROR: Missing Looker credential in st.secrets: {e}")
+        # --- FIX: Use print instead of st.error ---
+        print(f"Missing Looker credential in st.secrets: {e}")
         return None
     except Exception as e:
-        # --- FIX: Replaced st.error with print ---
-        print(f"ERROR: Error initializing Looker SDK: {e}")
+        print(f"Error initializing Looker SDK: {e}")
         return None
 
 # ==============================================================================
@@ -124,20 +121,6 @@ def _run_looker_query(
         )
         print("--- Data Query Successful ---")
 
-        # --- FIX: Cache the data for the Python Agent ---
-        try:
-            if data_result:
-                # Convert JSON string to DataFrame
-                df = pd.read_json(io.StringIO(data_result))
-                # Save to cache
-                save_data_to_cache.func(df, "data.csv")
-                print("--- Data saved to cache (data.csv) ---")
-            else:
-                print("--- No data returned from query, cache not saved ---")
-        except Exception as e:
-            print(f"--- Error saving data to cache: {e} ---")
-        # --- END FIX ---
-
         # 3. Build the Expanded URL parameters
         url_params = {}
         url_params['fields'] = ",".join(fields)
@@ -158,9 +141,21 @@ def _run_looker_query(
         viz_url = f"{base_url}/embed/explore/{MODEL_NAME}/{EXPLORE_NAME}?{query_string}"
         print(f"--- Expanded Embed URL Created: {viz_url} ---")
         
-        # 5. Return both the data and the new URL
+        # 5. Save the data to cache
+        try:
+            df = pd.read_json(io.StringIO(data_result))
+            # --- THIS IS THE FIX: Call .func to bypass the LangChain wrapper ---
+            save_data_to_cache.func(df, "data.csv")
+            # --- END FIX ---
+            print("--- Data saved to cache (data.csv) ---")
+            data_summary = f"Successfully queried and saved {len(df)} rows to data.csv."
+        except Exception as e:
+            print(f"--- Failed to save to cache --- \n{e}")
+            return json.dumps({"error": f"Error saving data to cache: {e}"})
+
+        # 6. Return a summary and the URL (NOT the raw data)
         final_output = {
-            "data": data_result, # Send the parsed JSON, not a string of JSON
+            "summary": data_summary,
             "viz_url": viz_url
         }
         return json.dumps(final_output)
@@ -170,7 +165,9 @@ def _run_looker_query(
         return json.dumps({"error": f"Error running Looker query: {e}"})
     finally:
         if sdk:
-            sdk.auth.logout()
+            # --- FIX: Comment out logout call to prevent hangs ---
+            # sdk.auth.logout()
+            pass
 
 # ==============================================================================
 # Your Original Tool Definition (Imports fixed)
@@ -193,7 +190,7 @@ looker_data_tool = StructuredTool.from_function(
         "   - For tables (data grouped by state), use: `'{\"type\": \"table\"}'`\n"
         "   - For maps (data by state), use: `'{\"type\": \"looker_map\", \"map_field_name\": \"state.state_name\"}'`\n"
         "   - For bar charts (pop by state), use: `'{\"type\": \"looker_bar\", \"stacking\": \"normal\"}'`\n"
-        "   - If you're unsure, default to: `'{\"type\": \"table\"}'`\n\n"
+        "   - If unsure, default to: `'{\"type\": \"table\"}'`\n\n"
         
         f"Here is the complete schema of available fields: {EXPLORE_METADATA}"
     ),

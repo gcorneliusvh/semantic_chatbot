@@ -3,25 +3,26 @@ import pandas as pd
 import io
 import os
 from pydantic import BaseModel, Field
-from typing import Literal
-import json # <-- ADDED IMPORT
+# --- FIX: Add List, Dict, Optional ---
+from typing import Literal, List, Dict, Optional
+import json 
+# --- ADDED: We need StructuredTool ---
+from langchain_core.tools import StructuredTool
+# --- FIX: Import Streamlit components ---
+from streamlit import components
 
 # --- LLM Imports ---
-from langchain_google_genai import ChatGoogleGenerativeAI # <-- FIX: Corrected typo
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # --- Langchain Core Imports ---
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableBranch, RunnablePassthrough
 from langchain.output_parsers.pydantic import PydanticOutputParser
-# --- FIX 1: ADDED create_structured_chat_agent and hub ---
 from langchain.agents import create_react_agent, AgentExecutor, create_structured_chat_agent
 from langchain import hub
-# --- END FIX ---
 from langchain_experimental.tools.python.tool import PythonREPLTool
 from langchain_core.tools import render_text_description
-# --- FIX: Import Message types ---
 from langchain_core.messages import HumanMessage, AIMessage
-# --- END FIX ---
 
 # --- Tool Imports ---
 from tools.looker_tool import looker_data_tool
@@ -39,12 +40,22 @@ try:
     if not GOOGLE_API_KEY:
         raise ValueError("GOOGLE_API_KEY is missing or empty in secrets.toml")
     
-    llm = ChatGoogleGenerativeAI(
+    # --- MODIFICATION: llm_pro for heavy tasks ---
+    llm_pro = ChatGoogleGenerativeAI(
         model="gemini-2.5-pro", 
         google_api_key=GOOGLE_API_KEY,
         temperature=0,
-        convert_system_message_to_human=True # Gemini prefers this
+        convert_system_message_to_human=True
     )
+    
+    # --- MODIFICATION: llm_flash for lighter, faster tasks ---
+    llm_flash = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash", # Using the exact model name
+        google_api_key=GOOGLE_API_KEY,
+        temperature=0,
+        convert_system_message_to_human=True
+    )
+
 except Exception as e:
     st.error(f"Error initializing LLM: {e}")
     st.stop()
@@ -97,15 +108,14 @@ router_prompt = PromptTemplate(
     partial_variables={"schema": parser.get_format_instructions()}
 )
 
-# The router chain itself
-router = router_prompt | llm | parser
+# --- MODIFICATION: Use llm_flash for the router ---
+router = router_prompt | llm_flash | parser
 
 # ==============================================================================
 # 4. Agent Definitions
 # ==============================================================================
 
 # --- 4a. Python Agent ---
-# --- FIX: Updated prompt to instruct agent to load data ---
 PYTHON_AGENT_PROMPT_TEMPLATE = """
 You are an expert Python data analyst. You have access to a Python REPL tool.
 Your first step is to load the cached data. The data is stored in a file named "data.csv".
@@ -149,7 +159,6 @@ Thought:
 {agent_scratchpad}
 """
 
-# --- FIX: Removed 'schema' from input_variables ---
 python_agent_prompt = PromptTemplate(
     template=PYTHON_AGENT_PROMPT_TEMPLATE,
     input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
@@ -157,26 +166,21 @@ python_agent_prompt = PromptTemplate(
 
 def create_python_agent_chain():
     """Creates the Python agent executor."""
-    # --- FIX: Check for file existence, but don't load it ---
     if not os.path.exists("data.csv"):
         return (lambda x: "There is no data cached to analyze. Please run a Looker query first.")
-    # --- END FIX ---
 
-    # --- FIX: Inject 'pd' instead of 'df' ---
     tools = [PythonREPLTool(locals={"pd": pd})]
-    # --- END FIX ---
     
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
     
-    # --- FIX: Partial the prompt to inject variables (no schema) ---
     prompt_with_vars = python_agent_prompt.partial(
         tools=tools_description, 
         tool_names=tool_names
     )
-    # --- END FIX ---
     
-    agent = create_react_agent(llm, tools, prompt_with_vars) # Use the partial'd prompt
+    # --- MODIFICATION: Use llm_pro for Python Agent ---
+    agent = create_react_agent(llm_pro, tools, prompt_with_vars)
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -189,20 +193,161 @@ def create_python_agent_chain():
 
 
 # --- 4b. Looker Agent ---
+LOOKER_AGENT_PROMPT_TEMPLATE = """
+You are an expert assistant for US Census data. You have two tools:
+1.  `LookerDataQuery`: To get data and visualizations.
+2.  `get_census_data_definition`: To define terms.
+
+**STRATEGY FOR `LookerDataQuery`:**
+-   You MUST provide a `vis_config_string` (a JSON string).
+-   **CHART PREFERENCE:** Prefer `'{{\"type\": \"looker_column\"}}'` or `'{{\"type\": \"looker_bar\"}}'` for most queries that compare values (e.g., "population by state").
+-   Use `'{{\"type\": \"table\"}}'` only if the user specifically asks for a table or if it's a long list of data.
+-   Use `'{{\"type\": \"single_value\"}}'` for single-number answers (e.g., "total population of US").
+
+**STRATEGY FOR FINAL ANSWER:**
+-   Your tool will return a JSON object with a "summary" and a "viz_url".
+-   Your "Final Answer" to the user should be a friendly, conversational confirmation.
+-   Start with the "summary" text (e.g., "Successfully queried 52 rows...").
+-   Then, add a one-sentence insight or prompt for the next step (e.g., "This data is now cached, so you can ask me to analyze it.")
+-   **DO NOT** include the "viz_url" or any markdown links. The app will display the visualization automatically.
+
+Here are the tools you must use:
+{tools}
+
+Here are the names of your tools: {tool_names}
+
+Use the following format for your thoughts and actions.
+(You MUST use this format. Do not just output the final answer.)
+
+Thought:
+The user is asking for...
+I need to use the `LookerDataQuery` tool.
+I will select the fields...
+For the visualization, the user wants to compare values, so I will use a column chart: `'{{\"type\": \"looker_column\"}}'`.
+(or)
+For the visualization, the user wants a single number, so I will use: `'{{\"type\": \"single_value\"}}'`.
+
+Action:
+```json
+{{
+  "action": "LookerDataQuery",
+  "action_input": {{
+    "fields": ["field_name_1", "field_name_2"],
+    "filters": {{"some_field": "some_value"}},
+    "sorts": ["field_name_1"],
+    "vis_config_string": "{{\"type\": \"looker_column\"}}"
+  }}
+}}
+```
+Observation:
+(The tool's JSON output, e.g., {{"summary": "Successfully queried 52 rows.", "viz_url": "https://..."}})
+
+Thought:
+The tool ran successfully and provided a summary. My job is to take that summary and make it more conversational and insightful.
+The user's original query was: {input}
+The summary is: (e.g., "Successfully queried 52 rows.")
+
+This query implies an interest in comparisons (e.g., male vs. female, or values by state).
+I will confirm I've retrieved the data for their query and suggest a *specific* next-step analysis that is relevant to their question.
+
+Action:
+```json
+{{
+  "action": "Final Answer",
+  "action_input": "I've successfully retrieved the data for '{input}' ({{"summary"}}). This data is now cached and the chart is displayed below. Since the data is ready, you can now ask me to perform analysis, like 'which state has the highest population' or 'what is the male-to-female ratio'!"
+}}
+```
+
+CHAT HISTORY:
+{chat_history}
+
+USER INPUT: {input}
+
+Begin!
+Thought:
+{agent_scratchpad}
+"""
+
+# --- NEW: Wrapper function to capture viz_url ---
+# --- FIX: The signature MUST match the original tool's args_schema (LookerQueryInput) ---
+def run_looker_tool_and_save_url(
+    fields: List[str], 
+    filters: Optional[Dict[str, str]] = None, 
+    sorts: Optional[List[str]] = None, 
+    limit: Optional[str] = "500",
+    vis_config_string: str = '{"type": "table"}'
+):
+    """
+    A wrapper that calls the looker_data_tool and saves 
+    the viz_url to the session state.
+    """
+    # --- FIX: Handle default Nones for filters and sorts ---
+    if filters is None:
+        filters = {}
+    if sorts is None:
+        sorts = []
+
+    # --- FIX: Call the original tool's function with the keyword arguments ---
+    result_str = looker_data_tool.func(
+        fields=fields,
+        filters=filters,
+        sorts=sorts,
+        limit=limit,
+        vis_config_string=vis_config_string
+    )
+    
+    viz_url = None
+    if isinstance(result_str, str):
+        try:
+            result_json = json.loads(result_str)
+            viz_url = result_json.get("viz_url")
+            
+            # Save the URL to a temporary spot in session state
+            if viz_url:
+                st.session_state["temp_viz_url"] = viz_url
+                
+        except (json.JSONDecodeError, AttributeError) as e:
+            print(f"Wrapper could not parse viz_url: {e}")
+            
+    # Return the original string result to the agent
+    return result_str
+# --- END FIX ---
+
 def create_looker_agent_chain():
+    
+    # --- MODIFICATION: Wrap the tool ---
     tools = [
-        looker_data_tool,
+        StructuredTool.from_function(
+            func=run_looker_tool_and_save_url,
+            name=looker_data_tool.name,
+            description=looker_data_tool.description,
+            args_schema=looker_data_tool.args_schema
+        ),
         get_census_data_definition
     ]
+    # --- END MODIFICATION ---
     
-    agent_prompt = hub.pull("hwchase17/structured-chat-agent")
-    agent = create_structured_chat_agent(llm, tools, agent_prompt)
+    agent_prompt = PromptTemplate(
+        template=LOOKER_AGENT_PROMPT_TEMPLATE,
+        input_variables=["input", "chat_history", "agent_scratchpad", "tools", "tool_names"]
+    )
+    
+    tools_description = render_text_description(tools)
+    tool_names = ", ".join([t.name for t in tools])
+    
+    agent_prompt = agent_prompt.partial(
+        tools=tools_description,
+        tool_names=tool_names
+    )
+
+    # --- MODIFICATION: Use llm_flash for Looker Agent ---
+    agent = create_structured_chat_agent(llm_flash, tools, agent_prompt)
     
     agent_executor = AgentExecutor(
         agent=agent, 
         tools=tools, 
         verbose=True,
-        handle_parsing_errors=True # This is very important
+        handle_parsing_errors=True
     ).with_config({"run_name": "LookerAgent"})
     
     return agent_executor
@@ -244,14 +389,13 @@ def create_social_agent_chain():
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
     
-    # --- FIX: Partial the prompt to inject variables ---
     prompt_with_vars = social_agent_prompt.partial(
         tools=tools_description, 
         tool_names=tool_names
     )
-    # --- END FIX ---
     
-    agent = create_react_agent(llm, tools, prompt_with_vars) # Use the partial'd prompt
+    # --- MODIFICATION: Use llm_flash for Social Agent ---
+    agent = create_react_agent(llm_flash, tools, prompt_with_vars)
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -260,7 +404,6 @@ def create_social_agent_chain():
         handle_parsing_errors=True
     ).with_config({"run_name": "SocialAgent"})
     
-    # --- FIX: No need to bind variables here ---
     return agent_executor
 
 
@@ -300,14 +443,13 @@ def create_general_agent_chain():
     tools_description = render_text_description(tools)
     tool_names = ", ".join([t.name for t in tools])
     
-    # --- FIX: Partial the prompt to inject variables ---
     prompt_with_vars = general_agent_prompt.partial(
         tools=tools_description, 
         tool_names=tool_names
     )
-    # --- END FIX ---
     
-    agent = create_react_agent(llm, tools, prompt_with_vars) # Use the partial'd prompt
+    # --- MODIFICATION: Use llm_pro for General/Knowledge Agent ---
+    agent = create_react_agent(llm_pro, tools, prompt_with_vars)
     
     agent_executor = AgentExecutor(
         agent=agent, 
@@ -316,7 +458,6 @@ def create_general_agent_chain():
         handle_parsing_errors=True
     ).with_config({"run_name": "GeneralAgent"})
     
-    # --- FIX: No need to bind variables here ---
     return agent_executor
 
 # ==============================================================================
@@ -327,14 +468,9 @@ branch = RunnableBranch(
     (lambda x: x['route'].destination == "looker", create_looker_agent_chain()),
     (lambda x: x['route'].destination == "python_agent", create_python_agent_chain()),
     (lambda x: x['route'].destination == "social", create_social_agent_chain()),
-    create_general_agent_chain() 
+    (lambda x: x['route'].destination == "general", create_general_agent_chain()), 
+    create_general_agent_chain() # Default fallback
 )
-
-# --- MODIFIED: The router is now run *before* the branch in the UI section ---
-# chain = (
-#     RunnablePassthrough.assign(route=router)
-#     | branch
-# )
 
 # ==============================================================================
 # 6. Streamlit UI
@@ -345,15 +481,12 @@ def setup_sidebar():
     st.sidebar.title("Cached Datasource")
     
     try:
-        # --- FIX: Explicitly load 'data.csv' ---
         df = load_df_from_cache.func(file_path="data.csv") 
         
         if df is not None and not df.empty:
-            # --- FIX: Correct label ---
             st.sidebar.info(f"**data.csv** loaded ({len(df)} rows)")
             st.sidebar.dataframe(df.head())
             
-            # Convert DataFrame to CSV string for downloading
             csv_data = df.to_csv(index=False).encode('utf-8')
             
             st.sidebar.download_button(
@@ -365,7 +498,6 @@ def setup_sidebar():
         else:
             st.sidebar.info("No data cached. Run a Looker query in the chatbot to load data.")
     except FileNotFoundError:
-        # --- FIX: Correct error message ---
         st.sidebar.info("No data.csv file found. Run a Looker query to create one.")
     except Exception as e:
         st.sidebar.error(f"Error loading cache: {e}")
@@ -375,27 +507,32 @@ st.set_page_config(page_title="Semantic Chatbot", layout="wide")
 st.title("Semantic Chatbot 🤖")
 
 # --- Setup Sidebar ---
-# This will be displayed on the main "app.py" page
 setup_sidebar()
 
-# Initialize chat history
+# --- FIX: Store messages as dictionaries to include viz_url ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
+# --- NEW: Clear temp viz_url on page load ---
+if "temp_viz_url" not in st.session_state:
+    st.session_state.temp_viz_url = None
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    # --- FIX: Read from .content attribute ---
-    role = "user" if isinstance(message, HumanMessage) else "assistant"
-    with st.chat_message(role):
-        st.markdown(message.content)
-        # --- MODIFICATION: Check if viz_url is in history and display ---
-        # This part is complex, let's skip for now to avoid saving complex objects.
-        # The user will just see the text on rerun, which is fine.
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+        # --- NEW: If message has a viz_url, display it ---
+        if message.get("viz_url"):
+            # --- FIX: Use st.components.v1.iframe and remove invalid arg ---
+            st.components.v1.iframe(message["viz_url"], height=600)
+# --- END FIX ---
 
 # React to user input
 if prompt := st.chat_input("What would you like to know?"):
-    # --- FIX: Append HumanMessage object ---
-    st.session_state.messages.append(HumanMessage(content=prompt))
+    # --- FIX: Store as dictionary ---
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    # --- NEW: Clear the temp viz_url before every new run ---
+    st.session_state.temp_viz_url = None
+    
     with st.chat_message("user"):
         st.markdown(prompt)
 
@@ -404,57 +541,59 @@ if prompt := st.chat_input("What would you like to know?"):
             
             final_answer = ""
             viz_url = None # Variable to hold the URL
+            route = None   # Variable to hold the route
             
             try:
-                # --- FIX: Pass the list of messages directly ---
-                # Get all messages *except* the new one
-                chat_history_list = st.session_state.messages[:-1]
+                # --- FIX: Reconstruct message objects for the agent ---
+                chat_history_list = []
+                for msg in st.session_state.messages[:-1]: # All but the new one
+                    if msg["role"] == "user":
+                        chat_history_list.append(HumanMessage(content=msg["content"]))
+                    else:
+                        chat_history_list.append(AIMessage(content=msg["content"]))
+                # --- END FIX ---
                 
                 chain_input = {"input": prompt, "chat_history": chat_history_list}
                 
-                # --- MODIFICATION: Run router first to check destination ---
                 route = router.invoke(chain_input)
                 chain_input["route"] = route
                 
                 response = branch.invoke(chain_input)
-                # --- END MODIFICATION ---
                 
-                # --- FIX: Handle string response from python_agent guard clause ---
                 if isinstance(response, str):
                     final_answer = response
                 else:
                     final_answer = response.get("output", "I'm sorry, I encountered an error.")
-                # --- END FIX ---
                 
                 # --- NEW IFRAME LOGIC ---
-                if (route and route.destination == 'looker' and
-                    response.get("intermediate_steps") and
-                    len(response["intermediate_steps"]) > 0):
-                    
-                    # Get the last tool call's observation
-                    last_step = response["intermediate_steps"][-1]
-                    observation = last_step[1] # This is the JSON string from looker_tool
-                    
-                    if isinstance(observation, str):
-                        try:
-                            obs_json = json.loads(observation)
-                            viz_url = obs_json.get("viz_url")
-                        except (json.JSONDecodeError, AttributeError) as e:
-                            # This is a soft fail, so we just print to console
-                            print(f"Could not parse viz_url from observation: {e}")
-                # --- END NEW LOGIC ---
+                # Check if the wrapper function saved a URL
+                if st.session_state.temp_viz_url:
+                    viz_url = st.session_state.temp_viz_url
+                    st.session_state.temp_viz_url = None # Clear it
+                # --- END NEW IFRAME LOGIC ---
                 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
                 final_answer = "I'm sorry, I'm having trouble processing that request."
 
-        # --- MODIFIED: Render text and iframe separately ---
+        # Render text and iframe
         st.markdown(final_answer)
-        
         if viz_url:
-            st.iframe(viz_url, height=500, scrolling=True)
-        # --- END MODIFICATION ---
+            # --- FIX: Use st.components.v1.iframe and remove invalid arg ---
+            st.components.v1.iframe(viz_url, height=600)
+        
     
-    # --- FIX: Append AIMessage object (only text) ---
-    st.session_state.messages.append(AIMessage(content=final_answer))
+    # --- FIX: Append the new dictionary to session state ---
+    st.session_state.messages.append({
+        "role": "assistant", 
+        "content": final_answer, 
+        "viz_url": viz_url # This will be None if it's not a Looker query
+    })
+    # --- END FIX ---
+
+    # Rerun if it was a successful Looker query to update sidebar
+    if (route and route.destination == 'looker' and 
+        not final_answer.startswith("I'm sorry") and 
+        not final_answer.startswith("There is no data")):
+        st.rerun()
 
