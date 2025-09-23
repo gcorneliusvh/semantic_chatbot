@@ -12,3 +12,6 @@ service-account.json
 
 # Data cache
 data.csv
+
+# User-generated scripts from the Script Editor
+user_scripts/
