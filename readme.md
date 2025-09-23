@@ -22,14 +22,14 @@ GOOGLE_API_KEY = "YOUR_GEMINI_API_KEY"
 
 # Looker SDK Credentials (used by looker_tool.py)
 [looker]
-# FIX: Removed markdown link formatting for compatibility
-base_url = "[https://yourinstance.cloud.looker.com](https://yourinstance.cloud.looker.com)" # e.g. "[https://mycompany.cloud.looker.com:19999](https://mycompany.cloud.looker.com:19999)"
+base_url = "[https://yourinstance.cloud.looker.com:19999](https://yourinstance.cloud.looker.com:19999)" # Note: Ensure you include the :19999 for API calls
 client_id = "YOUR_LOOKER_CLIENT_ID"
 client_secret = "YOUR_LOOKER_CLIENT_SECRET"
 
 # Proxycurl API Key (used by social_tool.py)
 # NOTE: This tool is used by the Social Agent and can be removed if not needed.
 PROXYCURL_API_KEY = "YOUR_PROXYCURL_API_KEY"
+
 Step 2: Install Dependencies
 The project uses several Python libraries for the core functionality, as specified in requirements.txt.
 
@@ -50,7 +50,7 @@ The tools/looker_tool.py and tools/knowledge_tool.py agents rely on a local file
 
 The script 01_fetch_metadata.py is used to generate this file using the Looker SDK.
 
-Ensure Looker SDK is configured (it uses the variables in secrets.toml).
+Ensure Looker SDK is configured (it uses the variables in secrets.toml or a local looker.ini file).
 
 Run the script (This assumes you are using the same Model/Explore names as the original project: data_block_acs_bigquery::acs_census_data):
 
@@ -68,7 +68,7 @@ streamlit run app.py
 The application will launch in your default web browser, allowing you to interact with the multi-agent chatbot.
 
 🛠️ Customization Guide: Using a Different Looker Explore
-To adapt this chatbot to a different Looker Explore (e.g., your internal financial model instead of the US Census Data), you need to modify three core files:
+To adapt this chatbot to a different Looker Explore (e.g., your internal financial model instead of the US Census Data), you need to modify three core files.
 
 1. Update Looker Model and Explore Names
 Edit tools/looker_tool.py to target your new data source.
