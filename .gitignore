@@ -8,4 +8,7 @@ looker.ini
 service-account.json
 
 # Streamlit
-.streamlit/';.,'
+.streamlit/
+
+# Data cache
+data.csv
