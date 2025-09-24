@@ -1,0 +1,14 @@
+[
+  {
+    "tool_name": "USCensusData",
+    "model_name": "data_block_acs_bigquery",
+    "explore_name": "acs_census_data",
+    "description_for_router": "Authoritative source for United States census data. Use for questions about population, demographics, income, housing, education, and other societal statistics at national, state, county, or blockgroup levels."
+  },
+  {
+    "tool_name": "ECommerceData",
+    "model_name": "ecom",
+    "explore_name": "order_items",
+    "description_for_router": "Primary source for e-commerce and sales data. Use for questions about orders, revenue, products, customers, inventory levels, and sales performance over time."
+  }
+]

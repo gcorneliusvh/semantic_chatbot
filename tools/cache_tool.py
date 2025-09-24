@@ -1,32 +1,42 @@
+# tools/cache_tool.py (Upgraded)
+import os
 import pandas as pd
-import streamlit as st
-# --- THIS IS THE FIX ---
 from langchain_core.tools import tool
-# --- END FIX ---
 
-@tool
-def save_data_to_cache(dataf: pd.DataFrame, file_path: str = "data_cache.csv") -> str:
-    """
-    Saves a pandas DataFrame to a CSV file.
-    """
+CACHE_DIR = "multi_dataset_cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+class CacheInput(BaseModel):
+    dataframe: pd.DataFrame
+    dataset_name: str = Field(description="A descriptive, snake_case name for the dataset, e.g., 'population_by_state' or 'sales_revenue'.")
+
+@tool(args_schema=CacheInput)
+def save_data_to_cache(dataframe: pd.DataFrame, dataset_name: str) -> str:
+    """Saves a pandas DataFrame to a named CSV file in the cache directory."""
     try:
-        dataf.to_csv(file_path, index=False)
-        return f"Data saved to {file_path}"
+        file_path = os.path.join(CACHE_DIR, f"{dataset_name}.csv")
+        dataframe.to_csv(file_path, index=False)
+        return f"Successfully saved dataset '{dataset_name}' with {len(dataframe)} rows."
     except Exception as e:
         return f"Error saving data: {e}"
 
 @tool
-def load_df_from_cache(file_path: str = "data_cache.csv") -> pd.DataFrame:
-    """
-    Loads data from a CSV file into a pandas DataFrame.
-    Returns None if the file is not found.
-    """
-    try:
-        df = pd.read_csv(file_path)
-        return df
-    except FileNotFoundError:
-        # Return None so app.py can handle it gracefully
-        return None
-    except Exception as e:
-        print(f"Error loading cache: {e}")
-        return None
+def list_cached_datasets() -> List[str]:
+    """Returns a list of all available dataset names in the cache."""
+    return [f.replace('.csv', '') for f in os.listdir(CACHE_DIR) if f.endswith('.csv')]
+
+class LoadCacheInput(BaseModel):
+    dataset_names: List[str] = Field(description="A list of dataset names to load from the cache.")
+
+@tool(args_schema=LoadCacheInput)
+def load_dataframes_from_cache(dataset_names: List[str]) -> Dict[str, pd.DataFrame]:
+    """Loads one or more named datasets from the cache into a dictionary of pandas DataFrames."""
+    loaded_data = {}
+    for name in dataset_names:
+        file_path = os.path.join(CACHE_DIR, f"{name}.csv")
+        try:
+            loaded_data[name] = pd.read_csv(file_path)
+        except FileNotFoundError:
+            # In a real agent, it would see this and know the data needs to be fetched first
+            pass 
+    return loaded_data
