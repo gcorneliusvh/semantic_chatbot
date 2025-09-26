@@ -12,3 +12,4 @@ ddgs
 fastapi
 uvicorn
 langgraph
+python-dotenv

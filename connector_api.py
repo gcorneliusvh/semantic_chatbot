@@ -17,6 +17,20 @@ app = FastAPI(
     version="1.1.0"
 )
 
+# --- END NEW ---
+
+# Import the main agentic chain from your core logic file
+from core_logic_langgraph import agentic_chain
+from langchain_core.messages import HumanMessage, AIMessage
+# ==============================================================================
+# 1. FastAPI App Initialization
+# ==============================================================================
+app = FastAPI(
+    title="Semantic Chatbot Connector API",
+    description="Provides API access to a multi-agent, LangGraph-powered system for integration with platforms like Google Agentspace.",
+    version="1.1.0"
+)
+
 # ==============================================================================
 # 2. Pydantic Models for API Input/Output
 # ==============================================================================
