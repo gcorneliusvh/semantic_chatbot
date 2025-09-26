@@ -6,7 +6,9 @@ langchain-community
 looker-sdk
 requests
 pydantic
-langchain-openai
 langchain-experimental
 langchain_google_vertexai
 ddgs
+fastapi
+uvicorn
+langgraph

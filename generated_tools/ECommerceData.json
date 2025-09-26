@@ -1,0 +1,639 @@
+{
+  "tool_name": "ECommerceData",
+  "model_name": "ecom",
+  "explore_name": "order_items",
+  "description_for_router": "Primary source for e-commerce and sales data. Use for questions about orders, revenue, products, customers, inventory levels, and sales performance over time.",
+  "metadata": [
+    {
+      "name": "inventory_items.cost",
+      "label": "Inventory Items Cost",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_date",
+      "label": "Inventory Items Created Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_month",
+      "label": "Inventory Items Created Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_quarter",
+      "label": "Inventory Items Created Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_raw",
+      "label": "Inventory Items Created Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_time",
+      "label": "Inventory Items Created Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_week",
+      "label": "Inventory Items Created Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.created_year",
+      "label": "Inventory Items Created Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.id",
+      "label": "Inventory Items ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_brand",
+      "label": "Inventory Items Product Brand",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_category",
+      "label": "Inventory Items Product Category",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_department",
+      "label": "Inventory Items Product Department",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_distribution_center_id",
+      "label": "Inventory Items Product Distribution Center ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_id",
+      "label": "Inventory Items Product ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_name",
+      "label": "Inventory Items Product Name",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_retail_price",
+      "label": "Inventory Items Product Retail Price",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.product_sku",
+      "label": "Inventory Items Product SKU",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_date",
+      "label": "Inventory Items Sold Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_month",
+      "label": "Inventory Items Sold Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_quarter",
+      "label": "Inventory Items Sold Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_raw",
+      "label": "Inventory Items Sold Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_time",
+      "label": "Inventory Items Sold Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_week",
+      "label": "Inventory Items Sold Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.sold_year",
+      "label": "Inventory Items Sold Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_date",
+      "label": "Order Items Created Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_month",
+      "label": "Order Items Created Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_quarter",
+      "label": "Order Items Created Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_raw",
+      "label": "Order Items Created Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_time",
+      "label": "Order Items Created Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_week",
+      "label": "Order Items Created Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.created_year",
+      "label": "Order Items Created Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_date",
+      "label": "Order Items Delivered Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_month",
+      "label": "Order Items Delivered Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_quarter",
+      "label": "Order Items Delivered Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_raw",
+      "label": "Order Items Delivered Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_time",
+      "label": "Order Items Delivered Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_week",
+      "label": "Order Items Delivered Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.delivered_year",
+      "label": "Order Items Delivered Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.id",
+      "label": "Order Items ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.inventory_item_id",
+      "label": "Order Items Inventory Item ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.order_id",
+      "label": "Order Items Order ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.product_id",
+      "label": "Order Items Product ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_date",
+      "label": "Order Items Returned Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_month",
+      "label": "Order Items Returned Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_quarter",
+      "label": "Order Items Returned Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_raw",
+      "label": "Order Items Returned Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_time",
+      "label": "Order Items Returned Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_week",
+      "label": "Order Items Returned Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.returned_year",
+      "label": "Order Items Returned Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.sale_price",
+      "label": "Order Items Sale Price",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_date",
+      "label": "Order Items Shipped Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_month",
+      "label": "Order Items Shipped Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_quarter",
+      "label": "Order Items Shipped Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_raw",
+      "label": "Order Items Shipped Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_time",
+      "label": "Order Items Shipped Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_week",
+      "label": "Order Items Shipped Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.shipped_year",
+      "label": "Order Items Shipped Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.status",
+      "label": "Order Items Status",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "order_items.user_id",
+      "label": "Order Items User ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_date",
+      "label": "Orders Created Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_month",
+      "label": "Orders Created Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_quarter",
+      "label": "Orders Created Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_raw",
+      "label": "Orders Created Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_time",
+      "label": "Orders Created Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_week",
+      "label": "Orders Created Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.created_year",
+      "label": "Orders Created Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_date",
+      "label": "Orders Delivered Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_month",
+      "label": "Orders Delivered Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_quarter",
+      "label": "Orders Delivered Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_raw",
+      "label": "Orders Delivered Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_time",
+      "label": "Orders Delivered Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_week",
+      "label": "Orders Delivered Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.delivered_year",
+      "label": "Orders Delivered Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.gender",
+      "label": "Orders Gender",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.num_of_item",
+      "label": "Orders Num of Item",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.order_id",
+      "label": "Orders Order ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_date",
+      "label": "Orders Returned Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_month",
+      "label": "Orders Returned Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_quarter",
+      "label": "Orders Returned Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_raw",
+      "label": "Orders Returned Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_time",
+      "label": "Orders Returned Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_week",
+      "label": "Orders Returned Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.returned_year",
+      "label": "Orders Returned Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_date",
+      "label": "Orders Shipped Date",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_month",
+      "label": "Orders Shipped Month",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_quarter",
+      "label": "Orders Shipped Quarter",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_raw",
+      "label": "Orders Shipped Raw",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_time",
+      "label": "Orders Shipped Time",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_week",
+      "label": "Orders Shipped Week",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.shipped_year",
+      "label": "Orders Shipped Year",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.status",
+      "label": "Orders Status",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "orders.user_id",
+      "label": "Orders User ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.brand",
+      "label": "Products Brand",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.category",
+      "label": "Products Category",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.cost",
+      "label": "Products Cost",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.department",
+      "label": "Products Department",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.distribution_center_id",
+      "label": "Products Distribution Center ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.id",
+      "label": "Products ID",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.name",
+      "label": "Products Name",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.retail_price",
+      "label": "Products Retail Price",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "products.sku",
+      "label": "Products SKU",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "inventory_items.count",
+      "label": "Inventory Items Count",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "order_items.count",
+      "label": "Order Items Count",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "orders.count",
+      "label": "Orders Count",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "products.count",
+      "label": "Products Count",
+      "description": "",
+      "type": "measure"
+    }
+  ],
+  "agent_prompt_template": "You are a senior e-commerce performance analyst. Your primary goal is to provide clear and actionable insights into sales, inventory, and order fulfillment based on the company's operational data. You are methodical, data-driven, and always aim to connect your findings to business performance.\n\n### Tool Overview\n\nYou have access to a single, powerful tool: `LookerDataQuery`. This tool allows you to query a comprehensive Looker Explore containing data on products, inventory, and customer orders. You must use this tool to retrieve the data necessary to answer any user question.\n\n### ANALYST STRATEGY\n\nTo effectively answer questions, you must think like an analyst and formulate queries that extract meaningful data. Follow these strategic guidelines:\n\n*   **Focus on Sales and Order Volume:** The most important metrics in this dataset are `order_items.count` and `orders.count`. Use these measures as the primary indicators of business performance. For example, to find the total number of items sold, you must query the `order_items.count` measure.\n\n*   **Analyze Performance by Product Attributes:** To understand what is driving sales, you must group your analysis by key product dimensions. The most important ones are `products.category`, `products.brand`, and `products.department`. These fields will help you identify top-performing product lines.\n\n*   **Track Trends Over Time:** Time-series analysis is crucial. Use the various date dimensions, especially `orders.created_date`, `orders.created_month`, and `orders.created_year`, to analyze sales trends, seasonality, and growth patterns.\n\n*   **Monitor Order Lifecycle and Returns:** Use the `orders.status` and `order_items.status` dimensions to analyze the customer experience. You can answer questions about shipping times, delivery success, and return rates by filtering or grouping by these statuses. For example, filtering for `orders.status = 'Returned'` allows you to analyze return patterns.\n\n*   **Example Query 1 (Sales Trend):** To answer \"How did our sales perform by month last year?\", your primary action should be to query the `order_items.count` measure, grouped by the `orders.created_month` dimension, and filtered for `orders.created_year` to the previous year.\n\n*   **Example Query 2 (Top Categories):** To answer \"What are our top 5 best-selling product categories?\", your primary action should be to query the `order_items.count` measure, grouped by the `products.category` dimension, and then sort the results in descending order with a limit of 5.\n\n### FINAL ANSWER STRATEGY\n\nWhen you have gathered sufficient information to answer the user's question, you MUST format your final response in Markdown with the following two sections:\n\n### Summary\n\nProvide a direct, data-driven answer to the user's question. This section should present the key facts and figures you retrieved from your queries.\n\n### Insights\n\nProvide a brief analysis of the data. Explain what the numbers mean in a business context. For example, if you found that one product category has significantly higher sales, mention it here and suggest why that might be the case. This section adds value beyond just presenting the raw data."
+}

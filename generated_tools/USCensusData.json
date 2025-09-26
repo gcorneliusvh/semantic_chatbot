@@ -1,0 +1,2169 @@
+{
+  "tool_name": "USCensusData",
+  "model_name": "data_block_acs_bigquery",
+  "explore_name": "acs_census_data",
+  "description_for_router": "Authoritative source for United States census data. Use for questions about population, demographics, income, housing, education, and other societal statistics at national, state, county, or blockgroup levels.",
+  "metadata": [
+    {
+      "name": "blockgroup.aggregate_travel_time_to_work_dim",
+      "label": "Blockgroup Aggregate Travel Time to Work Dim",
+      "description": "Aggregate travel time to work. The total number of minutes every worker in a geographic area over the age of 16 who did not work from home spent spent commuting to work in one day",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.amerindian_pop_dim",
+      "label": "Blockgroup Amerindian Pop Dim",
+      "description": "American Indian and Alaska Native Population. The number of people identifying as American Indian or Alaska native in each geography.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.armed_forces_dim",
+      "label": "Blockgroup Armed Forces Dim",
+      "description": "Population in Armed Forces. The number of people in each geography who are members of the U.S. Armed Forces (people on active duty with the United States Army, Air Force, Navy, Marine Corps, or Coast Guard).",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.asian_pop_dim",
+      "label": "Blockgroup Asian Pop Dim",
+      "description": "Asian Population. The number of people identifying as Asian, non-Hispanic in each geography.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.associates_degree_dim",
+      "label": "Blockgroup Associates Degree Dim",
+      "description": "Population Completed Associate's Degree. The number of people in a geographic area over the age of 25 who obtained a associate's degree, and did not complete a more advanced degree.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.bachelors_degree_dim",
+      "label": "Blockgroup Bachelors Degree Dim",
+      "description": "Population Completed Bachelor's Degree. The number of people in a geographic area over the age of 25 who obtained a bachelor's degree, and did not complete a more advanced degree.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.black_pop_dim",
+      "label": "Blockgroup Black Pop Dim",
+      "description": "Black or African American Population. The number of people identifying as black or African American, non-Hispanic in each geography.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_median_age_dim",
+      "label": "Blockgroup Block Group Median Age Dim",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.census_tract_key",
+      "label": "Blockgroup Census Tract Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.civilian_labor_force_dim",
+      "label": "Blockgroup Civilian Labor Force Dim",
+      "description": "Population in Civilian Labor Force. The number of civilians 16 years and over in each geography who can be classified as either 'employed' or 'unemployed' below.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_10_14_mins_dim",
+      "label": "Blockgroup Commute 10 14 Mins Dim",
+      "description": "Number of workers with a commute between 10 and 14 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 10 and 14 minutes. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_15_19_mins_dim",
+      "label": "Blockgroup Commute 15 19 Mins Dim",
+      "description": "Number of workers with a commute between 15 and 19 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 15 and 19 minutes. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_20_24_mins_dim",
+      "label": "Blockgroup Commute 20 24 Mins Dim",
+      "description": "Number of workers with a commute between 20 and 24 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 20 and 24 minutes.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_25_29_mins_dim",
+      "label": "Blockgroup Commute 25 29 Mins Dim",
+      "description": "Number of workers with a commute between 25 and 29 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 25 and 29 minutes. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_30_34_mins_dim",
+      "label": "Blockgroup Commute 30 34 Mins Dim",
+      "description": "Number of workers with a commute between 30 and 34 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 30 and 34 minutes. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_35_44_mins_dim",
+      "label": "Blockgroup Commute 35 44 Mins Dim",
+      "description": "Number of workers with a commute between 35 and 44 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 35 and 44 minutes. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_45_59_mins_dim",
+      "label": "Blockgroup Commute 45 59 Mins Dim",
+      "description": "Number of workers with a commute between 45 and 59 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 45 and 59 minutes. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_60_more_mins_dim",
+      "label": "Blockgroup Commute 60 More Mins Dim",
+      "description": "Number of workers with a commute of over 60 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in over 60 minutes.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_less_10_mins_dim",
+      "label": "Blockgroup Commute Less 10 Mins Dim",
+      "description": "Number of workers with less than 10 minute commute. The number of workers in a geographic area over the age of 16 who do not work from home and commute in less than 10 minutes.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commuters_16_over_dim",
+      "label": "Blockgroup Commuters 16 Over Dim",
+      "description": "Workers age 16 and over who do not work from home. The number of workers in a geographic area over the age of 16 who do not work from home",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commuters_by_public_transportation_dim",
+      "label": "Blockgroup Commuters By Public Transportation Dim",
+      "description": "Commuters by Public Transportation. The number of workers age 16 years and over within a geographic area who primarily traveled to work by public transportation.  This is the principal mode of travel or type of conveyance, by distance rather than time, that the worker usually used to get from home to work.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.county_key",
+      "label": "Blockgroup County Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_1_units_attached_dim",
+      "label": "Blockgroup Dwellings 1 Units Attached Dim",
+      "description": "Single-family (one unit) attached dwellings. This is a 1-unit structure that has one or more walls extending from ground to roof separating it from adjoining structures. In row houses (sometimes called townhouses), double houses, or houses attached to nonresidential structures, each house is a separate, attached structure if the dividing or common wall goes from ground to roof.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_1_units_detached_dim",
+      "label": "Blockgroup Dwellings 1 Units Detached Dim",
+      "description": "Single-family (one unit) detached dwellings. This is a 1-unit structure detached from any other house, that is, with open space on all four sides. Such structures are considered detached even if they have an adjoining shed or garage. A one-family house that contains a business is considered detached as long as the building has open space on all four sides. Mobile homes to which one or more permanent rooms have been added or built also are included.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_10_to_19_units_dim",
+      "label": "Blockgroup Dwellings 10 to 19 Units Dim",
+      "description": "Apartment buildings with 10 to 19 units",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_2_units_dim",
+      "label": "Blockgroup Dwellings 2 Units Dim",
+      "description": "Two-family (two unit) dwellings",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_20_to_49_units_dim",
+      "label": "Blockgroup Dwellings 20 to 49 Units Dim",
+      "description": "Apartment buildings with 20 to 49 units",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_3_to_4_units_dim",
+      "label": "Blockgroup Dwellings 3 to 4 Units Dim",
+      "description": "Multifamily dwellings with three to 4 units",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_5_to_9_units_dim",
+      "label": "Blockgroup Dwellings 5 to 9 Units Dim",
+      "description": "Apartment buildings with 5 to 9 units",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.dwellings_50_or_more_units_dim",
+      "label": "Blockgroup Dwellings 50 or More Units Dim",
+      "description": "Apartment buildings with 50 or more units",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.employed_pop_dim",
+      "label": "Blockgroup Employed Pop Dim",
+      "description": "Employed Population. The number of civilians 16 years old and over in each geography who either (1) were 'at work,' that is, those who did any work at all during the reference week as paid employees, worked in their own business or profession, worked on their own farm, or worked 15 hours or more as unpaid workers on a family farm or in a family business; or (2) were 'with a job but not at work,' that is, those who did not work during the reference week but had jobs or businesses from which they were temporarily absent due to illness, bad weather, industrial dispute, vacation, or other personal reasons. Excluded from the employed are people whose only activity consisted of work around the house or unpaid volunteer work for religious, charitable, and similar organizations; also excluded are all institutionalized people and people on active duty in the United States Armed Forces.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.families_with_young_children_dim",
+      "label": "Blockgroup Families with Young Children Dim",
+      "description": "Families with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.family_households_dim",
+      "label": "Blockgroup Family Households Dim",
+      "description": "Family Households. A family consists of a householder and one or more other people living in the same household who are related to the householder by birth, marriage, or adoption. All people in a household who are related to the householder are regarded as members of his or her family. A family household may contain people not related to the householder, but those people are not included as part of the family of the householder in tabulations. Thus, the number of family households is equal to the number of families, but family households may include more members than do families. A household can contain only one family for purposes of tabulations. Not all households contain families since a household may be comprised of a group of unrelated people or of one person living alone -- these are called nonfamily households. Families are classified by type as either a 'married couple family' or 'other family' according to the sex of the householder and the presence of relatives. The data on family type are based ...",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.father_in_labor_force_one_parent_families_with_young_children_dim",
+      "label": "Blockgroup Father In Labor Force One Parent Families with Young Children Dim",
+      "description": "One-parent families, father in labor force, with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.father_one_parent_families_with_young_children_dim",
+      "label": "Blockgroup Father One Parent Families with Young Children Dim",
+      "description": "One-parent families, father, with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_15_to_17_dim",
+      "label": "Blockgroup Female 15 to 17 Dim",
+      "description": "Female age 15 to 17. The female population between the age of fifteeen years to seventeen years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_18_to_19_dim",
+      "label": "Blockgroup Female 18 to 19 Dim",
+      "description": "Female age 18 and 19. The female population between the age of eighteen years to nineteen years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_20_dim",
+      "label": "Blockgroup Female 20 Dim",
+      "description": "Female age 20. The female population with an age of twenty years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_21_dim",
+      "label": "Blockgroup Female 21 Dim",
+      "description": "Female age 21. The female population with an age of twenty-one years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_22_to_24_dim",
+      "label": "Blockgroup Female 22 to 24 Dim",
+      "description": "Female age 22 to 24. The female population between the age of twenty-two years to twenty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_25_to_29_dim",
+      "label": "Blockgroup Female 25 to 29 Dim",
+      "description": "Female age 25 to 29. The female population between the age of twenty-five years to twenty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_30_to_34_dim",
+      "label": "Blockgroup Female 30 to 34 Dim",
+      "description": "Female age 30 to 34. The female population between the age of thirty years to thirty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_35_to_39_dim",
+      "label": "Blockgroup Female 35 to 39 Dim",
+      "description": "Female age 35 to 39. The female population between the age of thirty-five years to thirty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_40_to_44_dim",
+      "label": "Blockgroup Female 40 to 44 Dim",
+      "description": "Female age 40 to 44. The female population between the age of fourty years to fourty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_45_to_49_dim",
+      "label": "Blockgroup Female 45 to 49 Dim",
+      "description": "Female age 45 to 49. The female population between the age of fourty-five years to fourty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_5_to_9_dim",
+      "label": "Blockgroup Female 5 to 9 Dim",
+      "description": "Female age 5 to 9. The female population between the age of five years to nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_50_to_54_dim",
+      "label": "Blockgroup Female 50 to 54 Dim",
+      "description": "Female age 50 to 54. The female population between the age of fifty years to fifty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_55_to_59_dim",
+      "label": "Blockgroup Female 55 to 59 Dim",
+      "description": "Female age 55 to 59. The female population between the age of fifty-five years to fifty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_60_to_61_dim",
+      "label": "Blockgroup Female 60 to 61 Dim",
+      "description": "Female age 60 and 61. The female population between the age of sixty years to sixty-one years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_62_to_64_dim",
+      "label": "Blockgroup Female 62 to 64 Dim",
+      "description": "Female age 62 to 64. The female population between the age of sixty-two years to sixty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_65_to_66_dim",
+      "label": "Blockgroup Female 65 to 66 Dim",
+      "description": "Female age 65 to 66. The female population between the age of sixty-five years to sixty-six years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_67_to_69_dim",
+      "label": "Blockgroup Female 67 to 69 Dim",
+      "description": "Female age 67 to 69. The female population between the age of sixty-seven years to sixty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_70_to_74_dim",
+      "label": "Blockgroup Female 70 to 74 Dim",
+      "description": "Female age 70 to 74. The female population between the age of seventy years to seventy-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_75_to_79_dim",
+      "label": "Blockgroup Female 75 to 79 Dim",
+      "description": "Female age 75 to 79. The female population between the age of seventy-five years to seventy-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_80_to_84_dim",
+      "label": "Blockgroup Female 80 to 84 Dim",
+      "description": "Female age 80 to 84. The female population between the age of eighty years to eighty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_85_and_over_dim",
+      "label": "Blockgroup Female 85 and Over Dim",
+      "description": "Female age 85 and over. The female population of the age of eighty-five years and over within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_pop_dim",
+      "label": "Blockgroup Female Pop Dim",
+      "description": "Female Population. The number of people within each geography who are female.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_under_5_dim",
+      "label": "Blockgroup Female Under 5 Dim",
+      "description": "Female under 5 years. The female population over the age of five years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.high_school_diploma_dim",
+      "label": "Blockgroup High School Diploma Dim",
+      "description": "Population Completed High School. The number of people in a geographic area over the age of 25 who completed high school, and did not complete a more advanced degree.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.hispanic_pop_dim",
+      "label": "Blockgroup Hispanic Pop Dim",
+      "description": "Hispanic Population. The number of people identifying as Hispanic or Latino in each geography.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.households_dim",
+      "label": "Blockgroup Households Dim",
+      "description": "Households. A count of the number of households in each geography. A household consists of one or more people who live in the same dwelling and also share at meals or living accommodation, and may consist of a single family or some other grouping of people. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.housing_built_1939_or_earlier_dim",
+      "label": "Blockgroup Housing Built 1939 or Earlier Dim",
+      "description": "Housing units built before 1939. A house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters built in 1939 or earlier.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.housing_built_2000_to_2004_dim",
+      "label": "Blockgroup Housing Built 2000 to 2004 Dim",
+      "description": "Housing units built between 2000 and 2004. A house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters built from 2000 to 2004.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.housing_built_2005_or_later_dim",
+      "label": "Blockgroup Housing Built 2005 or Later Dim",
+      "description": "Housing units built in 2005 or later. A house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters built in 2005 or later.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.housing_units_dim",
+      "label": "Blockgroup Housing Units Dim",
+      "description": "Housing Units. A count of housing units in each geography.  A housing unit is a house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.housing_units_renter_occupied_dim",
+      "label": "Blockgroup Housing Units Renter Occupied Dim",
+      "description": "Renter occupied housing units. All occupied units which are not owner occupied, whether they are rented for cash rent or occupied without payment of cash rent, are classified as renter-occupied.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_10000_14999_dim",
+      "label": "Blockgroup Income 10000 14999 Dim",
+      "description": "Households with income of $10,000 to $14,999. The number of households in a geographic area whose annual income was between $10,000 and $14,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_100000_124999_dim",
+      "label": "Blockgroup Income 100000 124999 Dim",
+      "description": "Households with income of $100,000 to $124,999. The number of households in a geographic area whose annual income was between $100,000 and $124,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_125000_149999_dim",
+      "label": "Blockgroup Income 125000 149999 Dim",
+      "description": "Households with income of $125,000 to $149,999. The number of households in a geographic area whose annual income was between $125,000 and $149,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_15000_19999_dim",
+      "label": "Blockgroup Income 15000 19999 Dim",
+      "description": "Households with income of $15,000 to $19,999. The number of households in a geographic area whose annual income was between $15,000 and $19,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_150000_199999_dim",
+      "label": "Blockgroup Income 150000 199999 Dim",
+      "description": "Households with income of $150,000 to $199,999. The number of households in a geographic area whose annual income was between $150,000 and $1999,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_20000_24999_dim",
+      "label": "Blockgroup Income 20000 24999 Dim",
+      "description": "Households with income of $20,000 to $24,999. The number of households in a geographic area whose annual income was between $20,000 and $24,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_200000_or_more_dim",
+      "label": "Blockgroup Income 200000 or More Dim",
+      "description": "Households with income of $200,000 Or More. The number of households in a geographic area whose annual income was more than $200,000.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_25000_29999_dim",
+      "label": "Blockgroup Income 25000 29999 Dim",
+      "description": "Households with income of $25,000 to $29,999. The number of households in a geographic area whose annual income was between $20,000 and $24,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_30000_34999_dim",
+      "label": "Blockgroup Income 30000 34999 Dim",
+      "description": "Households with income of $30,000 to $34,999. The number of households in a geographic area whose annual income was between $30,000 and $34,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_35000_39999_dim",
+      "label": "Blockgroup Income 35000 39999 Dim",
+      "description": "Households with income of $35,000 to $39,999. The number of households in a geographic area whose annual income was between $35,000 and $39,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_40000_44999_dim",
+      "label": "Blockgroup Income 40000 44999 Dim",
+      "description": "Households with income of $40,000 to $44,999. The number of households in a geographic area whose annual income was between $40,000 and $44,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_45000_49999_dim",
+      "label": "Blockgroup Income 45000 49999 Dim",
+      "description": "Households with income of $45,000 to $49,999. The number of households in a geographic area whose annual income was between $45,000 and $49,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_50000_59999_dim",
+      "label": "Blockgroup Income 50000 59999 Dim",
+      "description": "Households with income of $50,000 to $59,999. The number of households in a geographic area whose annual income was between $50,000 and $59,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_60000_74999_dim",
+      "label": "Blockgroup Income 60000 74999 Dim",
+      "description": "Households with income of $60,000 to $74,999. The number of households in a geographic area whose annual income was between $60,000 and $74,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_75000_99999_dim",
+      "label": "Blockgroup Income 75000 99999 Dim",
+      "description": "Households with income of $75,000 to $99,999. The number of households in a geographic area whose annual income was between $75,000 and $99,999.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.income_less_10000_dim",
+      "label": "Blockgroup Income Less 10000 Dim",
+      "description": "Households with income less than $10,000. The number of households in a geographic area whose annual income was less than $10,000.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.less_one_year_college_dim",
+      "label": "Blockgroup Less One Year College Dim",
+      "description": "Population completed less than one year of college, no degree. The number of people in a geographic area over the age of 25 who attended college for less than one year and no further.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_10_to_14_dim",
+      "label": "Blockgroup Male 10 to 14 Dim",
+      "description": "Male age 10 to 14. The male population between the age of ten years to fourteen years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_15_to_17_dim",
+      "label": "Blockgroup Male 15 to 17 Dim",
+      "description": "Male age 15 to 17. The male population between the age of fifteeen years to seventeen years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_18_to_19_dim",
+      "label": "Blockgroup Male 18 to 19 Dim",
+      "description": "Male age 18 and 19. The male population between the age of eighteen years to nineteen years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_20_dim",
+      "label": "Blockgroup Male 20 Dim",
+      "description": "Male age 20. The male population with an age of twenty years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_21_dim",
+      "label": "Blockgroup Male 21 Dim",
+      "description": "Male age 21. The male population with an age of twenty-one years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_22_to_24_dim",
+      "label": "Blockgroup Male 22 to 24 Dim",
+      "description": "Male age 22 to 24. The male population between the age of twenty-two years to twenty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_25_to_29_dim",
+      "label": "Blockgroup Male 25 to 29 Dim",
+      "description": "Male age 25 to 29. The male population between the age of twenty-five years to twenty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_30_to_34_dim",
+      "label": "Blockgroup Male 30 to 34 Dim",
+      "description": "Male age 30 to 34. The male population between the age of thirty years to thirty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_35_to_39_dim",
+      "label": "Blockgroup Male 35 to 39 Dim",
+      "description": "Male age 35 to 39. The male population between the age of thirty-five years to thirty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_40_to_44_dim",
+      "label": "Blockgroup Male 40 to 44 Dim",
+      "description": "Male age 40 to 44. The male population between the age of fourty years to fourty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_45_to_49_dim",
+      "label": "Blockgroup Male 45 to 49 Dim",
+      "description": "Men age 45 to 49. The male population between the age of fourty-five years to fourty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_5_to_9_dim",
+      "label": "Blockgroup Male 5 to 9 Dim",
+      "description": "Male age 5 to 9. The male population between the age of five years to nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_50_to_54_dim",
+      "label": "Blockgroup Male 50 to 54 Dim",
+      "description": "Men age 50 to 54. The male population between the age of fifty years to fifty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_55_to_59_dim",
+      "label": "Blockgroup Male 55 to 59 Dim",
+      "description": "Men age 55 to 59. The male population between the age of fifty-five years to fifty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_60_to_61_dim",
+      "label": "Blockgroup Male 60 to 61 Dim",
+      "description": "Men age 60 to 61. The male population between the age of sixty years to sixty-one years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_62_to_64_dim",
+      "label": "Blockgroup Male 62 to 64 Dim",
+      "description": "Men age 62 to 64. The male population between the age of sixty-two years to sixty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_65_to_66_dim",
+      "label": "Blockgroup Male 65 to 66 Dim",
+      "description": "Male age 65 to 66. The male population between the age of sixty-five years to sixty-six years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_67_to_69_dim",
+      "label": "Blockgroup Male 67 to 69 Dim",
+      "description": "Male age 67 to 69. The male population between the age of sixty-seven years to sixty-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_70_to_74_dim",
+      "label": "Blockgroup Male 70 to 74 Dim",
+      "description": "Male age 70 to 74. The male population between the age of seventy years to seventy-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_75_to_79_dim",
+      "label": "Blockgroup Male 75 to 79 Dim",
+      "description": "Male age 75 to 79. The male population between the age of seventy-five years to seventy-nine years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_80_to_84_dim",
+      "label": "Blockgroup Male 80 to 84 Dim",
+      "description": "Male age 80 to 84. The male population between the age of eighty years to eighty-four years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_85_and_over_dim",
+      "label": "Blockgroup Male 85 and Over Dim",
+      "description": "Male age 85 and over. The male population of the age of eighty-five years and over within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_pop_dim",
+      "label": "Blockgroup Male Pop Dim",
+      "description": "Male Population. The number of people within each geography who are male.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.male_under_5_dim",
+      "label": "Blockgroup Male Under 5 Dim",
+      "description": "Male under 5 years. The male population over the age of five years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.married_households_dim",
+      "label": "Blockgroup Married Households Dim",
+      "description": "Married households. People in formal marriages, as well as people in common-law marriages, are included. Does not include same-sex marriages.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.masters_degree_dim",
+      "label": "Blockgroup Masters Degree Dim",
+      "description": "Population Completed Master's Degree. The number of people in a geographic area over the age of 25 who obtained a master's degree, but did not complete a more advanced degree.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.median_income_dim",
+      "label": "Blockgroup Median Income Dim",
+      "description": "Median Household Income in the past 12 Months. Within a geographic area, the median income received by every household on a regular basis before payments for personal income taxes, social security, union dues, medicare deductions, etc.  It includes income received from wages, salary, commissions, bonuses, and tips; self-employment income from own nonfarm or farm businesses, including proprietorships and partnerships; interest, dividends, net rental income, royalty income, or income from estates and trusts; Social Security or Railroad Retirement income; Supplemental Security Income (SSI); any cash public assistance or welfare payments from the state or local welfare office; retirement, survivor, or disability benefits; and any other sources of income received regularly such as Veterans' (VA) payments, unemployment and/or worker's compensation, child support, and alimony.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.median_rent_dim",
+      "label": "Blockgroup Median Rent Dim",
+      "description": "Median Rent. The median contract rent within a geographic area. The contract rent is the monthly rent agreed to or contracted for, regardless of any furnishings, utilities, fees, meals, or services that may be included. For vacant units, it is the monthly rent asked for the rental unit at the time of interview.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.median_year_structure_built_dim",
+      "label": "Blockgroup Median Year Structure Built Dim",
+      "description": "Median Year Structure Built. Median Year Structure Built",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.million_dollar_housing_units_dim",
+      "label": "Blockgroup Million Dollar Housing Units Dim",
+      "description": "Owner-occupied Housing Units valued at $1,000,000 or more.. The count of owner occupied housing units in a geographic area that are valued at $1,000,000 or more.  Value is the respondent's estimate of how much the property (house and lot, mobile home and lot, or condominium unit) would sell for if it were for sale.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.mobile_homes_dim",
+      "label": "Blockgroup Mobile Homes Dim",
+      "description": "Mobile homes. A manufactured home is defined as a movable dwelling, 8 feet or more wide and 40 feet or more long, designed to be towed on its own chassis, with transportation gear integral to the unit when it leaves the factory, and without need of a permanent foundation. These homes are built in accordance with the U.S. Department of Housing and Urban Development (HUD) building code.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.mortgaged_housing_units_dim",
+      "label": "Blockgroup Mortgaged Housing Units Dim",
+      "description": "Owner-occupied Housing Units with a Mortgage. The count of housing units within a geographic area that are mortagaged. 'Mortgage' refers to all forms of debt where the property is pledged as security for repayment of the debt, including deeds of trust, trust deed, contracts to purchase, land contracts, junior mortgages, and home equity loans.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.nonfamily_households_dim",
+      "label": "Blockgroup Nonfamily Households Dim",
+      "description": "Nonfamily Households. A householder living alone or with nonrelatives only. Unmarried couples households, whether opposite-sex or same-sex, with no relatives of the householder present are tabulated in nonfamily households.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.not_hispanic_pop_dim",
+      "label": "Blockgroup Not Hispanic Pop Dim",
+      "description": "Population not Hispanic. The number of people not identifying as Hispanic or Latino in each geography.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.not_in_labor_force_dim",
+      "label": "Blockgroup Not In Labor Force Dim",
+      "description": "Population Not in Labor Force. The number of people in each geography who are 16 years old and over who are not classified as members of the labor force. This category consists mainly of students, homemakers, retired workers, seasonal workers interviewed in an off season who were not looking for work, institutionalized people, and people doing only incidental unpaid family work (less than 15 hours during the reference week).",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.occupied_housing_units_dim",
+      "label": "Blockgroup Occupied Housing Units Dim",
+      "description": "Occupied housing units. A housing unit is classified as occupied if it is the usual place of residence of the person or group of people living in it at the time of enumeration.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.one_parent_families_with_young_children_dim",
+      "label": "Blockgroup One Parent Families with Young Children Dim",
+      "description": "One-parent families with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.one_year_more_college_dim",
+      "label": "Blockgroup One Year More College Dim",
+      "description": "Population completed more than one year of college, no degree. The number of people in a geographic area over the age of 25 who attended college for more than one year but did not obtain a degree",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.other_race_pop_dim",
+      "label": "Blockgroup Other Race Pop Dim",
+      "description": "Other Race population. The number of people identifying as another race in each geography",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.owner_occupied_housing_units_dim",
+      "label": "Blockgroup Owner Occupied Housing Units Dim",
+      "description": "Owner-occupied Housing Units",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.owner_occupied_housing_units_lower_value_quartile_dim",
+      "label": "Blockgroup Owner Occupied Housing Units Lower Value Quartile Dim",
+      "description": "Owner-Occupied Housing Units Lower Value Quartile",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.owner_occupied_housing_units_median_value_dim",
+      "label": "Blockgroup Owner Occupied Housing Units Median Value Dim",
+      "description": "Owner-Occupied Housing Units Median Value. The middle value (median) in a geographic area owner occupied housing units.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.owner_occupied_housing_units_upper_value_quartile_dim",
+      "label": "Blockgroup Owner Occupied Housing Units Upper Value Quartile Dim",
+      "description": "Owner-Occupied Housing Units Upper Value Quartile",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.percent_income_spent_on_rent_dim",
+      "label": "Blockgroup Percent Income Spent on Rent Dim",
+      "description": "Percent of Household Income Spent on Rent. Within a geographic area, the median percentage of household income which was spent on gross rent.  Gross rent is the amount of the contract rent plus the estimated average monthly cost of utilities (electricity, gas, water, sewer etc.) and fuels (oil, coal, wood, etc.) if these are paid by the renter.  Household income is the sum of the income of all people 15 years and older living in the household.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.pop_16_over_dim",
+      "label": "Blockgroup Pop 16 Over Dim",
+      "description": "Population age 16 and over. The number of people in each geography who are age 16 or over.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.pop_25_years_over_dim",
+      "label": "Blockgroup Pop 25 Years Over Dim",
+      "description": "Population 25 Years and Over. The number of people in a geographic area who are over the age of 25.  This is used mostly as a denominator of educational attainment.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.pop_in_labor_force_dim",
+      "label": "Blockgroup Pop In Labor Force Dim",
+      "description": "Population in Labor Force. The number of people in each geography who are either in the civilian labor force or are members of the U.S. Armed Forces (people on active duty with the United States Army, Air Force, Navy, Marine Corps, or Coast Guard).",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_10_to_15_percent_dim",
+      "label": "Blockgroup Rent 10 to 15 Percent Dim",
+      "description": "Housing units spending 10 to 14.9% income on rent. Gross rent from 10.0 to 14.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_15_to_20_percent_dim",
+      "label": "Blockgroup Rent 15 to 20 Percent Dim",
+      "description": "Housing units spending 15 to 19.9% income on rent. Gross rent from 15.0 to 19.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_20_to_25_percent_dim",
+      "label": "Blockgroup Rent 20 to 25 Percent Dim",
+      "description": "Housing units spending 20 to 24.9% income on rent. Gross rent from 20.0 to 24.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_25_to_30_percent_dim",
+      "label": "Blockgroup Rent 25 to 30 Percent Dim",
+      "description": "Housing units spending 25 to 29.9% income on rent. Gross rent from 25.0 to 29.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_30_to_35_percent_dim",
+      "label": "Blockgroup Rent 30 to 35 Percent Dim",
+      "description": "Housing units spending 30 to 34.9% income on rent. Gross rent from 30.0 to 34.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_35_to_40_percent_dim",
+      "label": "Blockgroup Rent 35 to 40 Percent Dim",
+      "description": "Housing units spending 35 to 39.9% income on rent. Gross rent from 35.0 to 39.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_40_to_50_percent_dim",
+      "label": "Blockgroup Rent 40 to 50 Percent Dim",
+      "description": "Housing units spending 40 to 49.9% income on rent. Gross rent from 40.0 to 49.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_burden_not_computed_dim",
+      "label": "Blockgroup Rent Burden Not Computed Dim",
+      "description": "Housing units without rent burden computed. Units for which no rent is paid and units occupied by households that reported no income or a net loss comprise this category",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_over_50_percent_dim",
+      "label": "Blockgroup Rent Over 50 Percent Dim",
+      "description": "Housing units spending over 50% income on rent. Gross rent over 50 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.rent_under_10_percent_dim",
+      "label": "Blockgroup Rent Under 10 Percent Dim",
+      "description": "Housing units spending less than 10% on rent. Gross rent less than 10 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.renter_occupied_housing_units_paying_cash_median_gross_rent_dim",
+      "label": "Blockgroup Renter Occupied Housing Units Paying Cash Median Gross Rent Dim",
+      "description": "Renter-Occupied Housing Units Paying Cash Rent Median Gross Rent",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.total_pop_dim",
+      "label": "Blockgroup Total Pop Dim",
+      "description": "Total Population. The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.two_parent_families_with_young_children_dim",
+      "label": "Blockgroup Two Parent Families with Young Children Dim",
+      "description": "Two-parent families with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.two_parents_father_in_labor_force_families_with_young_children_dim",
+      "label": "Blockgroup Two Parents Father In Labor Force Families with Young Children Dim",
+      "description": "Two-parent families, father only in labor force with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.two_parents_in_labor_force_families_with_young_children_dim",
+      "label": "Blockgroup Two Parents In Labor Force Families with Young Children Dim",
+      "description": "Two-parent families, both parents in labor force with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.two_parents_mother_in_labor_force_families_with_young_children_dim",
+      "label": "Blockgroup Two Parents Mother In Labor Force Families with Young Children Dim",
+      "description": "Two-parent families, mother only in labor force with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.two_parents_not_in_labor_force_families_with_young_children_dim",
+      "label": "Blockgroup Two Parents Not In Labor Force Families with Young Children Dim",
+      "description": "Two-parent families, neither parent in labor force with young children (under 6 years of age)",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.two_or_more_races_pop_dim",
+      "label": "Blockgroup Two or More Races Pop Dim",
+      "description": "Two or more races population. The number of people identifying as two or more races in each geography",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.unemployed_pop_dim",
+      "label": "Blockgroup Unemployed Pop Dim",
+      "description": "Unemployed population",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.vacant_housing_units_dim",
+      "label": "Blockgroup Vacant Housing Units Dim",
+      "description": "Vacant Housing Units. The count of vacant housing units in a geographic area. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.vacant_housing_units_for_rent_dim",
+      "label": "Blockgroup Vacant Housing Units for Rent Dim",
+      "description": "Vacant Housing Units for Rent. The count of vacant housing units in a geographic area that are for rent. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.vacant_housing_units_for_sale_dim",
+      "label": "Blockgroup Vacant Housing Units for Sale Dim",
+      "description": "Vacant Housing Units for Sale. The count of vacant housing units in a geographic area that are for sale. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.white_pop_dim",
+      "label": "Blockgroup White Pop Dim",
+      "description": "White Population. The number of people identifying as white, non-Hispanic in each geography.",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract_income_per_capita_dim",
+      "label": "Census Tract Census Tract Income per Capita Dim",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract_median_age_dim",
+      "label": "Census Tract Census Tract Median Age Dim",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.county_key",
+      "label": "Census Tract County Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.state_key",
+      "label": "Census Tract State Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.blockgroup_key",
+      "label": "County Blockgroup Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_income_per_capita_dim",
+      "label": "County County Income per Capita Dim",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_median_age_dim",
+      "label": "County County Median Age Dim",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "dimension"
+    },
+    {
+      "name": "county.state_key",
+      "label": "County State Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.female_10_to_14_dim",
+      "label": "Gender Female 10 to 14 Dim",
+      "description": "Female age 10 to 14. The female population between the age of ten years to fourteen years within the specified area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group",
+      "label": "Geography Block Group \ud83d\udccd",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract",
+      "label": "Geography Census Tract \ud83d\udccd",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_fips",
+      "label": "Geography County FIPS \ud83d\udccd",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_name",
+      "label": "Geography County Name",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_abbreviation",
+      "label": "Geography State Abbreviation",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_name",
+      "label": "Geography State \ud83d\udccd",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_income_per_capita_dim",
+      "label": "Income Per Capita Block Group Income per Capita Dim",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_income_per_capita_dim",
+      "label": "Income Per Capita State Income per Capita Dim",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_gross_rent_dim",
+      "label": "Medians Block Group Gross Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_median_income_dim",
+      "label": "Medians Block Group Median Income Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_median_rent_dim",
+      "label": "Medians Block Group Median Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_median_year_structure_built_dim",
+      "label": "Medians Block Group Median Year Structure Built Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.block_group_percent_income_spent_on_rent_dim",
+      "label": "Medians Block Group Percent Income Spent on Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract_gross_rent_dim",
+      "label": "Medians Census Tract Gross Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract_median_income_dim",
+      "label": "Medians Census Tract Median Income Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract_median_rent_dim",
+      "label": "Medians Census Tract Median Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "census_tract.census_tract_median_year_structure_built_dim",
+      "label": "Medians Census Tract Median Year Structure Built Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_gross_rent_dim",
+      "label": "Medians County Gross Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_median_income_dim",
+      "label": "Medians County Median Income Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_median_rent_dim",
+      "label": "Medians County Median Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_median_year_structure_built_dim",
+      "label": "Medians County Median Year Structure Built Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "county.county_percent_income_spent_on_rent_dim",
+      "label": "Medians County Percent Income Spent on Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_gross_rent_dim",
+      "label": "Medians State Gross Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_median_income_dim",
+      "label": "Medians State Median Income Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_median_rent_dim",
+      "label": "Medians State Median Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_median_year_structure_built_dim",
+      "label": "Medians State Median Year Structure Built Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_percent_income_spent_on_rent_dim",
+      "label": "Medians State Percent Income Spent on Rent Dim",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.key",
+      "label": "State Key",
+      "description": "",
+      "type": "dimension"
+    },
+    {
+      "name": "state.state_median_age_dim",
+      "label": "State State Median Age Dim",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "dimension"
+    },
+    {
+      "name": "blockgroup.commute_less_10_mins",
+      "label": "Commute   Less than 10 min",
+      "description": "Number of workers with less than 10 minute commute. The number of workers in a geographic area over the age of 16 who do not work from home and commute in less than 10 minutes.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_10_14_mins",
+      "label": "Commute 10-14 min",
+      "description": "Number of workers with a commute between 10 and 14 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 10 and 14 minutes. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_15_19_mins",
+      "label": "Commute 15-19 min",
+      "description": "Number of workers with a commute between 15 and 19 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 15 and 19 minutes. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_20_24_mins",
+      "label": "Commute 20-24 min",
+      "description": "Number of workers with a commute between 20 and 24 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 20 and 24 minutes.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_25_29_mins",
+      "label": "Commute 25-29 min",
+      "description": "Number of workers with a commute between 25 and 29 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 25 and 29 minutes. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_30_34_mins",
+      "label": "Commute 30-34 min",
+      "description": "Number of workers with a commute between 30 and 34 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 30 and 34 minutes. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_35_44_mins",
+      "label": "Commute 35-44 min",
+      "description": "Number of workers with a commute between 35 and 44 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 35 and 44 minutes. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_45_59_mins",
+      "label": "Commute 45-59 min",
+      "description": "Number of workers with a commute between 45 and 59 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in between 45 and 59 minutes. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commute_60_more_mins",
+      "label": "Commute 60 min or more",
+      "description": "Number of workers with a commute of over 60 minutes. The number of workers in a geographic area over the age of 16 who do not work from home and commute in over 60 minutes.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.aggregate_travel_time_to_work",
+      "label": "Commute Aggregate Travel Time to Work",
+      "description": "Aggregate travel time to work. The total number of minutes every worker in a geographic area over the age of 16 who did not work from home spent spent commuting to work in one day",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commuters_16_over",
+      "label": "Commute Commuters 16 Over",
+      "description": "Workers age 16 and over who do not work from home. The number of workers in a geographic area over the age of 16 who do not work from home",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.commuters_by_public_transportation",
+      "label": "Commute Commuters By Public Transportation",
+      "description": "Commuters by Public Transportation. The number of workers age 16 years and over within a geographic area who primarily traveled to work by public transportation.  This is the principal mode of travel or type of conveyance, by distance rather than time, that the worker usually used to get from home to work.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.associates_degree",
+      "label": "Education Associates Degree",
+      "description": "Population Completed Associate's Degree. The number of people in a geographic area over the age of 25 who obtained a associate's degree, and did not complete a more advanced degree.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.bachelors_degree",
+      "label": "Education Bachelors Degree",
+      "description": "Population Completed Bachelor's Degree. The number of people in a geographic area over the age of 25 who obtained a bachelor's degree, and did not complete a more advanced degree.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.high_school_diploma",
+      "label": "Education High School Diploma",
+      "description": "Population Completed High School. The number of people in a geographic area over the age of 25 who completed high school, and did not complete a more advanced degree.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.less_one_year_college",
+      "label": "Education Less One Year College",
+      "description": "Population completed less than one year of college, no degree. The number of people in a geographic area over the age of 25 who attended college for less than one year and no further.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.masters_degree",
+      "label": "Education Masters Degree",
+      "description": "Population Completed Master's Degree. The number of people in a geographic area over the age of 25 who obtained a master's degree, but did not complete a more advanced degree.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.one_year_more_college",
+      "label": "Education One Year More College",
+      "description": "Population completed more than one year of college, no degree. The number of people in a geographic area over the age of 25 who attended college for more than one year but did not obtain a degree",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_less_10000",
+      "label": "Employment   Less than $10,000",
+      "description": "Households with income less than $10,000. The number of households in a geographic area whose annual income was less than $10,000.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_10000_14999",
+      "label": "Employment  $10,000 - $14,999",
+      "description": "Households with income of $10,000 to $14,999. The number of households in a geographic area whose annual income was between $10,000 and $14,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_15000_19999",
+      "label": "Employment  $15,000 - $19,999",
+      "description": "Households with income of $15,000 to $19,999. The number of households in a geographic area whose annual income was between $15,000 and $19,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_20000_24999",
+      "label": "Employment  $20,000 - $24,999",
+      "description": "Households with income of $20,000 to $24,999. The number of households in a geographic area whose annual income was between $20,000 and $24,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_25000_29999",
+      "label": "Employment  $25,000 - $29,999",
+      "description": "Households with income of $25,000 to $29,999. The number of households in a geographic area whose annual income was between $20,000 and $24,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_30000_34999",
+      "label": "Employment  $30,000 - $34,999",
+      "description": "Households with income of $30,000 to $34,999. The number of households in a geographic area whose annual income was between $30,000 and $34,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_35000_39999",
+      "label": "Employment  $35,000 - $39,999",
+      "description": "Households with income of $35,000 to $39,999. The number of households in a geographic area whose annual income was between $35,000 and $39,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_40000_44999",
+      "label": "Employment  $40,000 - $44,999",
+      "description": "Households with income of $40,000 to $44,999. The number of households in a geographic area whose annual income was between $40,000 and $44,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_45000_49999",
+      "label": "Employment  $45,000 - $49,999",
+      "description": "Households with income of $45,000 to $49,999. The number of households in a geographic area whose annual income was between $45,000 and $49,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_50000_59999",
+      "label": "Employment  $50,000 - $59,999",
+      "description": "Households with income of $50,000 to $59,999. The number of households in a geographic area whose annual income was between $50,000 and $59,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_60000_74999",
+      "label": "Employment  $60,000 - $74,999",
+      "description": "Households with income of $60,000 to $74,999. The number of households in a geographic area whose annual income was between $60,000 and $74,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_75000_99999",
+      "label": "Employment  $75,000 - $99,999",
+      "description": "Households with income of $75,000 to $99,999. The number of households in a geographic area whose annual income was between $75,000 and $99,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_100000_124999",
+      "label": "Employment $100,000 - $124,999",
+      "description": "Households with income of $100,000 to $124,999. The number of households in a geographic area whose annual income was between $100,000 and $124,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_125000_149999",
+      "label": "Employment $125,000 - $149,999",
+      "description": "Households with income of $125,000 to $149,999. The number of households in a geographic area whose annual income was between $125,000 and $149,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_150000_199999",
+      "label": "Employment $150,000 - $199,999",
+      "description": "Households with income of $150,000 to $199,999. The number of households in a geographic area whose annual income was between $150,000 and $1999,999.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.income_200000_or_more",
+      "label": "Employment $200,000 or more",
+      "description": "Households with income of $200,000 Or More. The number of households in a geographic area whose annual income was more than $200,000.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.civilian_labor_force",
+      "label": "Employment Civilian Labor Force",
+      "description": "Population in Civilian Labor Force. The number of civilians 16 years and over in each geography who can be classified as either 'employed' or 'unemployed' below.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.employed_pop",
+      "label": "Employment Employed Pop",
+      "description": "Employed Population. The number of civilians 16 years old and over in each geography who either (1) were 'at work,' that is, those who did any work at all during the reference week as paid employees, worked in their own business or profession, worked on their own farm, or worked 15 hours or more as unpaid workers on a family farm or in a family business; or (2) were 'with a job but not at work,' that is, those who did not work during the reference week but had jobs or businesses from which they were temporarily absent due to illness, bad weather, industrial dispute, vacation, or other personal reasons. Excluded from the employed are people whose only activity consisted of work around the house or unpaid volunteer work for religious, charitable, and similar organizations; also excluded are all institutionalized people and people on active duty in the United States Armed Forces.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.not_in_labor_force",
+      "label": "Employment Not In Labor Force",
+      "description": "Population Not in Labor Force. The number of people in each geography who are 16 years old and over who are not classified as members of the labor force. This category consists mainly of students, homemakers, retired workers, seasonal workers interviewed in an off season who were not looking for work, institutionalized people, and people doing only incidental unpaid family work (less than 15 hours during the reference week).",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.pop_in_labor_force",
+      "label": "Employment Pop In Labor Force",
+      "description": "Population in Labor Force. The number of people in each geography who are either in the civilian labor force or are members of the U.S. Armed Forces (people on active duty with the United States Army, Air Force, Navy, Marine Corps, or Coast Guard).",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.unemployed_pop",
+      "label": "Employment Unemployed Pop",
+      "description": "Unemployed population",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.families_with_young_children",
+      "label": "Family Families with Young Children",
+      "description": "Families with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.family_households",
+      "label": "Family Family Households",
+      "description": "Family Households. A family consists of a householder and one or more other people living in the same household who are related to the householder by birth, marriage, or adoption. All people in a household who are related to the householder are regarded as members of his or her family. A family household may contain people not related to the householder, but those people are not included as part of the family of the householder in tabulations. Thus, the number of family households is equal to the number of families, but family households may include more members than do families. A household can contain only one family for purposes of tabulations. Not all households contain families since a household may be comprised of a group of unrelated people or of one person living alone -- these are called nonfamily households. Families are classified by type as either a 'married couple family' or 'other family' according to the sex of the householder and the presence of relatives. The data on family type are based ...",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.father_in_labor_force_one_parent_families_with_young_children",
+      "label": "Family Father In Labor Force One Parent Families with Young Children",
+      "description": "One-parent families, father in labor force, with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.father_one_parent_families_with_young_children",
+      "label": "Family Father One Parent Families with Young Children",
+      "description": "One-parent families, father, with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.married_households",
+      "label": "Family Married Households",
+      "description": "Married households. People in formal marriages, as well as people in common-law marriages, are included. Does not include same-sex marriages.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.nonfamily_households",
+      "label": "Family Nonfamily Households",
+      "description": "Nonfamily Households. A householder living alone or with nonrelatives only. Unmarried couples households, whether opposite-sex or same-sex, with no relatives of the householder present are tabulated in nonfamily households.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.one_parent_families_with_young_children",
+      "label": "Family One Parent Families with Young Children",
+      "description": "One-parent families with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.two_parent_families_with_young_children",
+      "label": "Family Two Parent Families with Young Children",
+      "description": "Two-parent families with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.two_parents_father_in_labor_force_families_with_young_children",
+      "label": "Family Two Parents Father In Labor Force Families with Young Children",
+      "description": "Two-parent families, father only in labor force with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.two_parents_in_labor_force_families_with_young_children",
+      "label": "Family Two Parents In Labor Force Families with Young Children",
+      "description": "Two-parent families, both parents in labor force with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.two_parents_mother_in_labor_force_families_with_young_children",
+      "label": "Family Two Parents Mother In Labor Force Families with Young Children",
+      "description": "Two-parent families, mother only in labor force with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.two_parents_not_in_labor_force_families_with_young_children",
+      "label": "Family Two Parents Not In Labor Force Families with Young Children",
+      "description": "Two-parent families, neither parent in labor force with young children (under 6 years of age)",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_under_5",
+      "label": "Gender   Age under 5",
+      "description": "Female under 5 years. The female population over the age of five years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_under_5",
+      "label": "Gender   Age under 5",
+      "description": "Male under 5 years. The male population over the age of five years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_5_to_9",
+      "label": "Gender  Age 5-9",
+      "description": "Female age 5 to 9. The female population between the age of five years to nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_5_to_9",
+      "label": "Gender  Age 5-9",
+      "description": "Male age 5 to 9. The male population between the age of five years to nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_10_to_14",
+      "label": "Gender Age 10-14",
+      "description": "Female age 10 to 14. The female population between the age of ten years to fourteen years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_10_to_14",
+      "label": "Gender Age 10-14",
+      "description": "Male age 10 to 14. The male population between the age of ten years to fourteen years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_15_to_17",
+      "label": "Gender Age 15-17",
+      "description": "Female age 15 to 17. The female population between the age of fifteeen years to seventeen years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_15_to_17",
+      "label": "Gender Age 15-17",
+      "description": "Male age 15 to 17. The male population between the age of fifteeen years to seventeen years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_18_to_19",
+      "label": "Gender Age 18-19",
+      "description": "Female age 18 and 19. The female population between the age of eighteen years to nineteen years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_18_to_19",
+      "label": "Gender Age 18-19",
+      "description": "Male age 18 and 19. The male population between the age of eighteen years to nineteen years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_20",
+      "label": "Gender Age 20",
+      "description": "Female age 20. The female population with an age of twenty years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_20",
+      "label": "Gender Age 20",
+      "description": "Male age 20. The male population with an age of twenty years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_21",
+      "label": "Gender Age 21",
+      "description": "Female age 21. The female population with an age of twenty-one years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_21",
+      "label": "Gender Age 21",
+      "description": "Male age 21. The male population with an age of twenty-one years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_22_to_24",
+      "label": "Gender Age 22-24",
+      "description": "Female age 22 to 24. The female population between the age of twenty-two years to twenty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_22_to_24",
+      "label": "Gender Age 22-24",
+      "description": "Male age 22 to 24. The male population between the age of twenty-two years to twenty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_25_to_29",
+      "label": "Gender Age 25-29",
+      "description": "Female age 25 to 29. The female population between the age of twenty-five years to twenty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_25_to_29",
+      "label": "Gender Age 25-29",
+      "description": "Male age 25 to 29. The male population between the age of twenty-five years to twenty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_30_to_34",
+      "label": "Gender Age 30-34",
+      "description": "Female age 30 to 34. The female population between the age of thirty years to thirty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_30_to_34",
+      "label": "Gender Age 30-34",
+      "description": "Male age 30 to 34. The male population between the age of thirty years to thirty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_35_to_39",
+      "label": "Gender Age 35-39",
+      "description": "Female age 35 to 39. The female population between the age of thirty-five years to thirty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_35_to_39",
+      "label": "Gender Age 35-39",
+      "description": "Male age 35 to 39. The male population between the age of thirty-five years to thirty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_40_to_44",
+      "label": "Gender Age 40-44",
+      "description": "Female age 40 to 44. The female population between the age of fourty years to fourty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_40_to_44",
+      "label": "Gender Age 40-44",
+      "description": "Male age 40 to 44. The male population between the age of fourty years to fourty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_45_to_49",
+      "label": "Gender Age 45-49",
+      "description": "Female age 45 to 49. The female population between the age of fourty-five years to fourty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_45_to_49",
+      "label": "Gender Age 45-49",
+      "description": "Men age 45 to 49. The male population between the age of fourty-five years to fourty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_50_to_54",
+      "label": "Gender Age 50-54",
+      "description": "Female age 50 to 54. The female population between the age of fifty years to fifty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_50_to_54",
+      "label": "Gender Age 50-54",
+      "description": "Men age 50 to 54. The male population between the age of fifty years to fifty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_55_to_59",
+      "label": "Gender Age 55-59",
+      "description": "Female age 55 to 59. The female population between the age of fifty-five years to fifty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_55_to_59",
+      "label": "Gender Age 55-59",
+      "description": "Men age 55 to 59. The male population between the age of fifty-five years to fifty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_60_to_61",
+      "label": "Gender Age 60-61",
+      "description": "Female age 60 and 61. The female population between the age of sixty years to sixty-one years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_60_61",
+      "label": "Gender Age 60-61",
+      "description": "Men age 60 to 61. The male population between the age of sixty years to sixty-one years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_62_to_64",
+      "label": "Gender Age 62-64",
+      "description": "Female age 62 to 64. The female population between the age of sixty-two years to sixty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_62_64",
+      "label": "Gender Age 62-64",
+      "description": "Men age 62 to 64. The male population between the age of sixty-two years to sixty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_65_to_66",
+      "label": "Gender Age 65-66",
+      "description": "Female age 65 to 66. The female population between the age of sixty-five years to sixty-six years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_65_to_66",
+      "label": "Gender Age 65-66",
+      "description": "Male age 65 to 66. The male population between the age of sixty-five years to sixty-six years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_67_to_69",
+      "label": "Gender Age 67-69",
+      "description": "Female age 67 to 69. The female population between the age of sixty-seven years to sixty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_67_to_69",
+      "label": "Gender Age 67-69",
+      "description": "Male age 67 to 69. The male population between the age of sixty-seven years to sixty-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_70_to_74",
+      "label": "Gender Age 70-74",
+      "description": "Female age 70 to 74. The female population between the age of seventy years to seventy-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_70_to_74",
+      "label": "Gender Age 70-74",
+      "description": "Male age 70 to 74. The male population between the age of seventy years to seventy-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_75_to_79",
+      "label": "Gender Age 75-79",
+      "description": "Female age 75 to 79. The female population between the age of seventy-five years to seventy-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_75_to_79",
+      "label": "Gender Age 75-79",
+      "description": "Male age 75 to 79. The male population between the age of seventy-five years to seventy-nine years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_80_to_84",
+      "label": "Gender Age 80-84",
+      "description": "Female age 80 to 84. The female population between the age of eighty years to eighty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_80_to_84",
+      "label": "Gender Age 80-84",
+      "description": "Male age 80 to 84. The male population between the age of eighty years to eighty-four years within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_85_and_over",
+      "label": "Gender Age 85 and over",
+      "description": "Female age 85 and over. The female population of the age of eighty-five years and over within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_85_and_over",
+      "label": "Gender Age 85 and over",
+      "description": "Male age 85 and over. The male population of the age of eighty-five years and over within the specified area.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.female_pop",
+      "label": "Gender Total Female Population",
+      "description": "Female Population. The number of people within each geography who are female.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.male_pop",
+      "label": "Gender Total Male Population",
+      "description": "Male Population. The number of people within each geography who are male.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_burden_not_computed",
+      "label": "Housing   Rent Burden Not Computed",
+      "description": "Housing units without rent burden computed. Units for which no rent is paid and units occupied by households that reported no income or a net loss comprise this category",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_1_units_attached",
+      "label": "Housing  Dwellings 1 Units Attached",
+      "description": "Single-family (one unit) attached dwellings. This is a 1-unit structure that has one or more walls extending from ground to roof separating it from adjoining structures. In row houses (sometimes called townhouses), double houses, or houses attached to nonresidential structures, each house is a separate, attached structure if the dividing or common wall goes from ground to roof.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_1_units_detached",
+      "label": "Housing  Dwellings 1 Units Detached",
+      "description": "Single-family (one unit) detached dwellings. This is a 1-unit structure detached from any other house, that is, with open space on all four sides. Such structures are considered detached even if they have an adjoining shed or garage. A one-family house that contains a business is considered detached as long as the building has open space on all four sides. Mobile homes to which one or more permanent rooms have been added or built also are included.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_2_units",
+      "label": "Housing  Dwellings 2 Units",
+      "description": "Two-family (two unit) dwellings",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_3_to_4_units",
+      "label": "Housing  Dwellings 3 to 4 Units",
+      "description": "Multifamily dwellings with three to 4 units",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_5_to_9_units",
+      "label": "Housing  Dwellings 5 to 9 Units",
+      "description": "Apartment buildings with 5 to 9 units",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_under_10_percent",
+      "label": "Housing  Rent Under 10 percent",
+      "description": "Housing units spending less than 10% on rent. Gross rent less than 10 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_10_to_19_units",
+      "label": "Housing Dwellings 10 to 19 Units",
+      "description": "Apartment buildings with 10 to 19 units",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_20_to_49_units",
+      "label": "Housing Dwellings 20 to 49 Units",
+      "description": "Apartment buildings with 20 to 49 units",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.dwellings_50_or_more_units",
+      "label": "Housing Dwellings 50 or More Units",
+      "description": "Apartment buildings with 50 or more units",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.households",
+      "label": "Housing Households",
+      "description": "Households. A count of the number of households in each geography. A household consists of one or more people who live in the same dwelling and also share at meals or living accommodation, and may consist of a single family or some other grouping of people. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.housing_built_1939_or_earlier",
+      "label": "Housing Housing Built 1939 or Earlier",
+      "description": "Housing units built before 1939. A house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters built in 1939 or earlier.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.housing_built_2000_to_2004",
+      "label": "Housing Housing Built 2000 to 2004",
+      "description": "Housing units built between 2000 and 2004. A house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters built from 2000 to 2004.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.housing_built_2005_or_later",
+      "label": "Housing Housing Built 2005 or Later",
+      "description": "Housing units built in 2005 or later. A house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters built in 2005 or later.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.housing_units",
+      "label": "Housing Housing Units",
+      "description": "Housing Units. A count of housing units in each geography.  A housing unit is a house, an apartment, a mobile home or trailer, a group of rooms, or a single room occupied as separate living quarters, or if vacant, intended for occupancy as separate living quarters.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.housing_units_renter_occupied",
+      "label": "Housing Housing Units Renter Occupied",
+      "description": "Renter occupied housing units. All occupied units which are not owner occupied, whether they are rented for cash rent or occupied without payment of cash rent, are classified as renter-occupied.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.million_dollar_housing_units",
+      "label": "Housing Million Dollar Housing Units",
+      "description": "Owner-occupied Housing Units valued at $1,000,000 or more.. The count of owner occupied housing units in a geographic area that are valued at $1,000,000 or more.  Value is the respondent's estimate of how much the property (house and lot, mobile home and lot, or condominium unit) would sell for if it were for sale.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.mobile_homes",
+      "label": "Housing Mobile Homes",
+      "description": "Mobile homes. A manufactured home is defined as a movable dwelling, 8 feet or more wide and 40 feet or more long, designed to be towed on its own chassis, with transportation gear integral to the unit when it leaves the factory, and without need of a permanent foundation. These homes are built in accordance with the U.S. Department of Housing and Urban Development (HUD) building code.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.mortgaged_housing_units",
+      "label": "Housing Mortgaged Housing Units",
+      "description": "Owner-occupied Housing Units with a Mortgage. The count of housing units within a geographic area that are mortagaged. 'Mortgage' refers to all forms of debt where the property is pledged as security for repayment of the debt, including deeds of trust, trust deed, contracts to purchase, land contracts, junior mortgages, and home equity loans.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.occupied_housing_units",
+      "label": "Housing Occupied Housing Units",
+      "description": "Occupied housing units. A housing unit is classified as occupied if it is the usual place of residence of the person or group of people living in it at the time of enumeration.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.owner_occupied_housing_units",
+      "label": "Housing Owner Occupied Housing Units",
+      "description": "Owner-occupied Housing Units",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_10_to_15_percent",
+      "label": "Housing Rent 10 to 15 Percent",
+      "description": "Housing units spending 10 to 14.9% income on rent. Gross rent from 10.0 to 14.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_15_to_20_percent",
+      "label": "Housing Rent 15 to 20 Percent",
+      "description": "Housing units spending 15 to 19.9% income on rent. Gross rent from 15.0 to 19.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_20_to_25_percent",
+      "label": "Housing Rent 20 to 25 Percent",
+      "description": "Housing units spending 20 to 24.9% income on rent. Gross rent from 20.0 to 24.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_25_to_30_percent",
+      "label": "Housing Rent 25 to 30 Percent",
+      "description": "Housing units spending 25 to 29.9% income on rent. Gross rent from 25.0 to 29.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_30_to_35_percent",
+      "label": "Housing Rent 30 to 35 Percent",
+      "description": "Housing units spending 30 to 34.9% income on rent. Gross rent from 30.0 to 34.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_35_to_40_percent",
+      "label": "Housing Rent 35 to 40 Percent",
+      "description": "Housing units spending 35 to 39.9% income on rent. Gross rent from 35.0 to 39.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_40_to_50_percent",
+      "label": "Housing Rent 40 to 50 Percent",
+      "description": "Housing units spending 40 to 49.9% income on rent. Gross rent from 40.0 to 49.9 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.rent_over_50_percent",
+      "label": "Housing Rent Over 50 percent",
+      "description": "Housing units spending over 50% income on rent. Gross rent over 50 percent of household income. Computed ratio of monthly gross rent to monthly household income (total household income divided by 12). The ratio is computed separately for each unit and is rounded to the nearest tenth. Units for which no rent is paid and units occupied by households that report no income or a net loss comprise the category, 'Not computed'. Gross rent as a percentage of household income provides information on the monthly housing cost expenses for renters. ",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.vacant_housing_units",
+      "label": "Housing Vacant Housing Units",
+      "description": "Vacant Housing Units. The count of vacant housing units in a geographic area. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.vacant_housing_units_for_rent",
+      "label": "Housing Vacant Housing Units for Rent",
+      "description": "Vacant Housing Units for Rent. The count of vacant housing units in a geographic area that are for rent. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.vacant_housing_units_for_sale",
+      "label": "Housing Vacant Housing Units for Sale",
+      "description": "Vacant Housing Units for Sale. The count of vacant housing units in a geographic area that are for sale. A housing unit is vacant if no one is living in it at the time of enumeration, unless its occupants are only temporarily absent. Units temporarily occupied at the time of enumeration entirely by people who have a usual residence elsewhere are also classified as vacant.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.block_group_income_per_capita",
+      "label": "Income Per Capita Block Group Income per Capita",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "measure"
+    },
+    {
+      "name": "census_tract.census_tract_income_per_capita",
+      "label": "Income Per Capita Census Tract Income per Capita",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_income_per_capita",
+      "label": "Income Per Capita County Income per Capita",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_income_per_capita",
+      "label": "Income Per Capita State Income per Capita",
+      "description": "Per Capita Income in the past 12 Months. Per capita income is the mean income computed for every man, woman, and child in a particular group. It is derived by dividing the total income of a particular group by the total population.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.block_group_gross_rent",
+      "label": "Medians Block Group Gross Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.block_group_median_income",
+      "label": "Medians Block Group Median Income",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.block_group_median_rent",
+      "label": "Medians Block Group Median Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.block_group_median_year_structure_built",
+      "label": "Medians Block Group Median Year Structure Built",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.block_group_percent_income_spent_on_rent",
+      "label": "Medians Block Group Percent Income Spent on Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "census_tract.census_tract_gross_rent",
+      "label": "Medians Census Tract Gross Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "census_tract.census_tract_median_age",
+      "label": "Medians Census Tract Median Age",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "measure"
+    },
+    {
+      "name": "census_tract.census_tract_median_income",
+      "label": "Medians Census Tract Median Income",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "census_tract.census_tract_median_rent",
+      "label": "Medians Census Tract Median Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "census_tract.census_tract_median_year_structure_built",
+      "label": "Medians Census Tract Median Year Structure Built",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_gross_rent",
+      "label": "Medians County Gross Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_median_age",
+      "label": "Medians County Median Age",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_median_income",
+      "label": "Medians County Median Income",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_median_rent",
+      "label": "Medians County Median Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_median_year_structure_built",
+      "label": "Medians County Median Year Structure Built",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "county.county_percent_income_spent_on_rent",
+      "label": "Medians County Percent Income Spent on Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_gross_rent",
+      "label": "Medians State Gross Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_median_age",
+      "label": "Medians State Median Age",
+      "description": "Median Age. The median age of all people in a given geographic area.",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_median_income",
+      "label": "Medians State Median Income",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_median_rent",
+      "label": "Medians State Median Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_median_year_structure_built",
+      "label": "Medians State Median Year Structure Built",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "state.state_percent_income_spent_on_rent",
+      "label": "Medians State Percent Income Spent on Rent",
+      "description": "",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.armed_forces",
+      "label": "Population Armed Forces",
+      "description": "Population in Armed Forces. The number of people in each geography who are members of the U.S. Armed Forces (people on active duty with the United States Army, Air Force, Navy, Marine Corps, or Coast Guard).",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.pop_16_over",
+      "label": "Population Pop 16 Over",
+      "description": "Population age 16 and over. The number of people in each geography who are age 16 or over.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.pop_25_years_over",
+      "label": "Population Pop 25 Years Over",
+      "description": "Population 25 Years and Over. The number of people in a geographic area who are over the age of 25.  This is used mostly as a denominator of educational attainment.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.total_pop",
+      "label": "Population Total Pop",
+      "description": "Total Population. The total number of all people living in a given geographic area.  This is a very useful catch-all denominator when calculating rates.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.amerindian_pop",
+      "label": "Race Amerindian Pop",
+      "description": "American Indian and Alaska Native Population. The number of people identifying as American Indian or Alaska native in each geography.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.asian_pop",
+      "label": "Race Asian Pop",
+      "description": "Asian Population. The number of people identifying as Asian, non-Hispanic in each geography.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.black_pop",
+      "label": "Race Black Pop",
+      "description": "Black or African American Population. The number of people identifying as black or African American, non-Hispanic in each geography.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.hispanic_pop",
+      "label": "Race Hispanic Pop",
+      "description": "Hispanic Population. The number of people identifying as Hispanic or Latino in each geography.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.not_hispanic_pop",
+      "label": "Race Not Hispanic Pop",
+      "description": "Population not Hispanic. The number of people not identifying as Hispanic or Latino in each geography.",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.other_race_pop",
+      "label": "Race Other Race Pop",
+      "description": "Other Race population. The number of people identifying as another race in each geography",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.two_or_more_races_pop",
+      "label": "Race Two or More Races Pop",
+      "description": "Two or more races population. The number of people identifying as two or more races in each geography",
+      "type": "measure"
+    },
+    {
+      "name": "blockgroup.white_pop",
+      "label": "Race White Pop",
+      "description": "White Population. The number of people identifying as white, non-Hispanic in each geography.",
+      "type": "measure"
+    }
+  ],
+  "agent_prompt_template": "You are an expert data analyst specializing in US Census and demographic data. Your role is to use a specialized tool to answer questions about population, housing, income, and other socio-economic factors across various geographic levels in the United States.\n\n### Tool Overview\n\nYou have access to a primary tool called `LookerDataQuery`. This tool allows you to retrieve data and visualizations from a Looker Explore containing detailed US demographic information. You must formulate your queries using the dimensions and measures available in this Explore.\n\n### ANALYST STRATEGY\n\nYour primary purpose is to analyze and compare socio-economic and demographic characteristics across different US geographies (State, County, Census Tract, Block Group). To effectively answer user questions, follow these strategic guidelines:\n\n*   **Identify the Geographic Scope:** The most critical first step is to determine the geographic level of the user's question. Your analysis will almost always be grouped or filtered by a geographic dimension. Use `state.state_name` for state-level analysis, `county.county_name` for county-level, and so on. Always filter by the relevant geography to ensure your query is efficient and accurate.\n*   **Select Key Metrics:** The most fundamental metric for population questions is `blockgroup.total_pop`. For analysis involving income, housing, or employment, use core measures like `county.county_median_income`, `blockgroup.owner_occupied_housing_units`, and `blockgroup.employed_pop`. Remember to use the `measure` version of a field for aggregations (e.g., sums, averages), not the `dimension` version.\n*   **Combine Fields for Insight:** Complex questions require combining multiple fields. For example, to understand affordability, you might compare `county.county_median_income` with `county.county_median_rent`. To analyze demographics, you would combine `blockgroup.total_pop` with various race or age-based population measures (e.g., `blockgroup.hispanic_pop`, `blockgroup.female_30_to_34`).\n*   **Example 1 - Comparing States:** To compare the total population and median household income of California and Texas, your primary action should be to query the measures `blockgroup.total_pop` and `state.state_median_income`, group by the `state.state_name` dimension, and apply a filter where `state.state_name` is either 'California' or 'Texas'.\n*   **Example 2 - Analyzing a County:** To understand the educational attainment within a specific county like 'Cook County', you should query measures such as `blockgroup.high_school_diploma`, `blockgroup.bachelors_degree`, and `blockgroup.masters_degree`, and apply a filter where `county.county_name` is 'Cook County'.\n\n### FINAL ANSWER STRATEGY\n\nYour final response must be a Markdown formatted report with two distinct sections.\n\n*   **### Summary**: Directly answer the user's question with the key data points and figures you have retrieved.\n*   **### Insights**: Provide a brief, one or two-sentence analysis of what the data implies or any interesting patterns you observed."
+}

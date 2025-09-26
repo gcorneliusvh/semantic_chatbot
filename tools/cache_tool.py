@@ -1,16 +1,28 @@
-# tools/cache_tool.py (Upgraded)
 import os
 import pandas as pd
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field, ConfigDict # <-- Import ConfigDict
+from typing import List, Dict
 
+# --- Configuration ---
 CACHE_DIR = "multi_dataset_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
-class CacheInput(BaseModel):
+# --- Tool Input Schemas ---
+class SaveCacheInput(BaseModel):
+    """Input schema for the save_data_to_cache tool."""
+    # This tells Pydantic to allow complex objects like DataFrames.
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     dataframe: pd.DataFrame
     dataset_name: str = Field(description="A descriptive, snake_case name for the dataset, e.g., 'population_by_state' or 'sales_revenue'.")
 
-@tool(args_schema=CacheInput)
+class LoadCacheInput(BaseModel):
+    """Input schema for the load_dataframes_from_cache tool."""
+    dataset_names: List[str] = Field(description="A list of dataset names to load from the cache.")
+
+# --- Tool Definitions ---
+@tool(args_schema=SaveCacheInput)
 def save_data_to_cache(dataframe: pd.DataFrame, dataset_name: str) -> str:
     """Saves a pandas DataFrame to a named CSV file in the cache directory."""
     try:
@@ -25,18 +37,19 @@ def list_cached_datasets() -> List[str]:
     """Returns a list of all available dataset names in the cache."""
     return [f.replace('.csv', '') for f in os.listdir(CACHE_DIR) if f.endswith('.csv')]
 
-class LoadCacheInput(BaseModel):
-    dataset_names: List[str] = Field(description="A list of dataset names to load from the cache.")
-
 @tool(args_schema=LoadCacheInput)
-def load_dataframes_from_cache(dataset_names: List[str]) -> Dict[str, pd.DataFrame]:
-    """Loads one or more named datasets from the cache into a dictionary of pandas DataFrames."""
+def load_dataframes_from_cache(dataset_names: List[str]) -> Dict[str, str]:
+    """
+    Loads one or more named datasets from the cache into a dictionary of
+    DataFrames, returned as JSON strings.
+    """
     loaded_data = {}
     for name in dataset_names:
         file_path = os.path.join(CACHE_DIR, f"{name}.csv")
         try:
-            loaded_data[name] = pd.read_csv(file_path)
+            df = pd.read_csv(file_path)
+            # Return as JSON string for the agent to handle
+            loaded_data[name] = df.to_json(orient='records')
         except FileNotFoundError:
-            # In a real agent, it would see this and know the data needs to be fetched first
-            pass 
+            loaded_data[name] = f"Error: Dataset '{name}' not found in cache."
     return loaded_data
