@@ -3,12 +3,15 @@ import json
 import pandas as pd
 import io
 from urllib.parse import urlencode
-import configparser
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 import looker_sdk
 from looker_sdk import models40
+
+# --- Import the centralized config ---
+# This ensures that credentials are loaded before the SDK is initialized.
+from config import config
 
 # Assuming cache_tool is in the same directory or accessible
 from .cache_tool import save_data_to_cache
@@ -34,9 +37,9 @@ def run_looker_query(
     vis_config_string: str = '{"type": "table"}',
 ) -> str:
     """
-    Executes a dynamic query against a specified Looker model and explore using a looker.ini file.
+    Executes a dynamic query against a specified Looker model and explore using a centralized configuration.
     """
-    # --- FIX: Input Validation ---
+    # --- Input Validation ---
     if not fields:
         return json.dumps({"error": "Query failed: The 'fields' parameter cannot be empty. You must provide at least one dimension or measure."})
 
@@ -44,12 +47,11 @@ def run_looker_query(
     sorts = sorts or []
 
     try:
-        # --- FIX: Use an absolute path to the looker.ini file ---
-        # This makes the path relative to this file, not the execution directory
-        ini_file_path = os.path.join(os.path.dirname(__file__), '..', 'looker.ini')
-        sdk = looker_sdk.init40(ini_file_path)
+        # The SDK will now automatically pick up the credentials from the environment variables
+        # loaded by the config module at application startup.
+        sdk = looker_sdk.init40()
     except Exception as e:
-        return json.dumps({"error": f"Looker SDK initialization failed. Ensure looker.ini is in the project root and is correct. Error: {e}"})
+        return json.dumps({"error": f"Looker SDK initialization failed. Error: {e}"})
         
     try:
         query_payload = models40.WriteQuery(
@@ -58,13 +60,9 @@ def run_looker_query(
         )
         data_result = sdk.run_inline_query(result_format="json", body=query_payload)
         
-        config = configparser.ConfigParser()
-        config.read(ini_file_path)
-        base_url = config.get('Looker', 'browser_url', fallback="")
+        # Get the browser_url from the environment for the embed URL
+        base_url = os.environ.get("LOOKERSDK_BROWSER_URL", "")
 
-        if not base_url:
-            print("Warning: 'browser_url' not set in looker.ini. Visualization URL will be incomplete.")
-        
         query_string = urlencode({
             'fields': ",".join(fields), 'sorts': ",".join(sorts), 'limit': str(limit),
             'vis_config': vis_config_string, 'toggle': 'vis',

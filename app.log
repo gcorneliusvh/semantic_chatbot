@@ -1,0 +1,293 @@
+2025-09-26 21:06:38,735 - root - INFO - Invoking agent for session: b26643e6-265a-4cfd-beae-2176f38c0c67
+2025-09-26 21:06:51,697 - root - ERROR - An unhandled exception occurred: unhashable type: 'dict'
+Traceback (most recent call last):
+  File "/home/admin_/semantic_chatbot/app.py", line 109, in <module>
+    for event in agentic_chain.stream(chain_input, config=config, stream_mode="values"):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2647, in stream
+    for _ in runner.tick(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 162, in tick
+    run_with_retry(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 659, in invoke
+    input = step.invoke(input, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/graph/_branch.py", line 169, in _route
+    return self._finish(writer, input, result, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/graph/_branch.py", line 205, in _finish
+    r if isinstance(r, Send) else self.ends[r] for r in result
+                                  ~~~~~~~~~^^^
+TypeError: unhashable type: 'dict'
+During task with name 'planner' and id 'bea79af1-9ff3-5ec1-8b96-3ca2b3dd261d'
+2025-09-26 21:09:13,283 - root - INFO - Invoking agent for session: 8e7e5ee0-1e4d-475b-8228-cf8b495c0bfa
+2025-09-26 21:09:33,381 - root - ERROR - An unhandled exception occurred: 2 validation errors for LookerQueryInput
+fields
+  Input should be a valid list [type=list_type, input_value='{"model_name": "ecom", "... desc"], "limit": "10"}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/list_type
+dataset_name
+  Field required [type=missing, input_value={'fields': '{"model_name"...desc"], "limit": "10"}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+Traceback (most recent call last):
+  File "/home/admin_/semantic_chatbot/app.py", line 109, in <module>
+    for event in agentic_chain.stream(chain_input, config=config, stream_mode="values"):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2647, in stream
+    for _ in runner.tick(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 162, in tick
+    run_with_retry(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 657, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/semantic_chatbot/core_logic_langgraph.py", line 132, in agent_executor_node
+    result = agent_executor.invoke({"input": state['original_question'], "chat_history": state['messages']})
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/chains/base.py", line 165, in invoke
+    self._call(inputs, run_manager=run_manager)
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1625, in _call
+    next_step_output = self._take_next_step(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1325, in _take_next_step
+    list(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1408, in _iter_next_step
+    yield self._perform_agent_action(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1433, in _perform_agent_action
+    observation = tool.run(
+                  ^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/tools/base.py", line 892, in run
+    raise error_to_raise
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/tools/base.py", line 854, in run
+    tool_args, tool_kwargs = self._to_args_and_kwargs(
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/tools/base.py", line 769, in _to_args_and_kwargs
+    tool_input = self._parse_input(tool_input, tool_call_id)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/tools/base.py", line 650, in _parse_input
+    input_args.model_validate({key_: tool_input})
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 705, in model_validate
+    return cls.__pydantic_validator__.validate_python(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 2 validation errors for LookerQueryInput
+fields
+  Input should be a valid list [type=list_type, input_value='{"model_name": "ecom", "... desc"], "limit": "10"}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/list_type
+dataset_name
+  Field required [type=missing, input_value={'fields': '{"model_name"...desc"], "limit": "10"}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/missing
+During task with name 'specialist_agent_executor' and id '68fe9107-2667-e0f5-4fb8-94d91a338de5'
+2025-09-26 21:13:43,411 - root - INFO - Invoking agent for session: 43aaee4c-e52e-4257-bad0-49613718f8fa
+2025-09-26 21:13:49,005 - root - ERROR - An unhandled exception occurred: 'Input to PromptTemplate is missing variables {\'"fields"\'}.  Expected: [\'"fields"\', \'agent_scratchpad\', \'input\'] Received: [\'input\', \'chat_history\', \'intermediate_steps\', \'agent_scratchpad\']\nNote: if you intended {"fields"} to be part of the string and not a variable, please escape it with double curly braces like: \'{{"fields"}}\'.\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT '
+Traceback (most recent call last):
+  File "/home/admin_/semantic_chatbot/app.py", line 109, in <module>
+    for event in agentic_chain.stream(chain_input, config=config, stream_mode="values"):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2647, in stream
+    for _ in runner.tick(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 162, in tick
+    run_with_retry(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 657, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/semantic_chatbot/core_logic_langgraph.py", line 138, in agent_node
+    result = agent_executor.invoke({
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/chains/base.py", line 165, in invoke
+    self._call(inputs, run_manager=run_manager)
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1625, in _call
+    next_step_output = self._take_next_step(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1325, in _take_next_step
+    list(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 1352, in _iter_next_step
+    output = self._action_agent.plan(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/agent.py", line 455, in plan
+    for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3649, in stream
+    yield from self.transform(iter([input]), config, **kwargs)
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3635, in transform
+    yield from self._transform_stream_with_config(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 2369, in _transform_stream_with_config
+    chunk: Output = context.run(next, iterator)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3594, in _transform
+    yield from final_pipeline
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1568, in transform
+    for ichunk in input:
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5926, in transform
+    yield from self.bound.transform(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1568, in transform
+    for ichunk in input:
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1586, in transform
+    yield from self.stream(final, config, **kwargs)
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1155, in stream
+    yield self.invoke(input, config, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/prompts/base.py", line 214, in invoke
+    return self._call_with_config(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 2089, in _call_with_config
+    context.run(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/config.py", line 430, in call_func_with_variable_args
+    return func(input, **kwargs)  # type: ignore[call-arg]
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/prompts/base.py", line 187, in _format_prompt_with_error_handling
+    inner_input_ = self._validate_input(inner_input)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/prompts/base.py", line 181, in _validate_input
+    raise KeyError(
+KeyError: 'Input to PromptTemplate is missing variables {\'"fields"\'}.  Expected: [\'"fields"\', \'agent_scratchpad\', \'input\'] Received: [\'input\', \'chat_history\', \'intermediate_steps\', \'agent_scratchpad\']\nNote: if you intended {"fields"} to be part of the string and not a variable, please escape it with double curly braces like: \'{{"fields"}}\'.\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_PROMPT_INPUT '
+During task with name 'USCensusData' and id '33ba99a2-52f8-281a-16be-2e4fe6bd91f5'
+2025-09-26 21:15:18,082 - root - INFO - Invoking agent for session: 6bbe373a-5990-4315-aeaa-3631d196d1f3
+2025-09-26 21:15:23,862 - root - ERROR - An unhandled exception occurred: Expected dict, got USCensusData
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_GRAPH_NODE_RETURN_VALUE
+Traceback (most recent call last):
+  File "/home/admin_/semantic_chatbot/app.py", line 109, in <module>
+    for event in agentic_chain.stream(chain_input, config=config, stream_mode="values"):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2647, in stream
+    for _ in runner.tick(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 162, in tick
+    run_with_retry(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 659, in invoke
+    input = step.invoke(input, config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_write.py", line 87, in _write
+    self.do_write(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_write.py", line 129, in do_write
+    write(_assemble_writes(writes))
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_write.py", line 184, in _assemble_writes
+    if ww := w.mapper(w.value):
+             ^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/graph/state.py", line 983, in _get_updates
+    raise InvalidUpdateError(msg)
+langgraph.errors.InvalidUpdateError: Expected dict, got USCensusData
+For troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/INVALID_GRAPH_NODE_RETURN_VALUE
+During task with name 'supervisor' and id 'b388346b-0ba8-25fc-fc62-9494ef9df55b'
+2025-09-26 21:19:09,843 - root - INFO - Invoking agent for session: 2ea662ca-e25c-4d57-a824-13c8b6ee72a2
+2025-09-26 21:19:09,855 - root - ERROR - An unhandled exception occurred: 'intermediate_steps'
+Traceback (most recent call last):
+  File "/home/admin_/semantic_chatbot/app.py", line 109, in <module>
+    for event in agentic_chain.stream(chain_input, config=config, stream_mode="values"):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2647, in stream
+    for _ in runner.tick(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 162, in tick
+    run_with_retry(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 657, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/semantic_chatbot/core_logic_langgraph.py", line 118, in run_agent
+    agent_outcome = agent_runnable.invoke(state)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3243, in invoke
+    input_ = context.run(step.invoke, input_, config, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/passthrough.py", line 530, in invoke
+    return self._call_with_config(self._invoke, input, config, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 2089, in _call_with_config
+    context.run(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/config.py", line 430, in call_func_with_variable_args
+    return func(input, **kwargs)  # type: ignore[call-arg]
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/passthrough.py", line 516, in _invoke
+    **self.mapper.invoke(
+      ^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 4000, in invoke
+    output = {key: future.result() for key, future in zip(steps, futures)}
+                   ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3984, in _invoke_step
+    return context.run(
+           ^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5024, in invoke
+    return self._call_with_config(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 2089, in _call_with_config
+    context.run(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/config.py", line 430, in call_func_with_variable_args
+    return func(input, **kwargs)  # type: ignore[call-arg]
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 4881, in _invoke
+    output = call_func_with_variable_args(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/runnables/config.py", line 430, in call_func_with_variable_args
+    return func(input, **kwargs)  # type: ignore[call-arg]
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain/agents/react/agent.py", line 139, in <lambda>
+    agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
+                                                 ~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'intermediate_steps'
+During task with name 'agent' and id '2012bc30-247b-d11f-025a-ba7395afd043'
+2025-09-26 21:23:06,526 - root - INFO - Invoking agent for session: c0367c73-a153-4b9c-8040-2fb86094ae0e
+2025-09-26 21:23:15,123 - root - ERROR - An unhandled exception occurred: 1 validation error for AIMessage
+tool_calls.0.args
+  Input should be a valid dictionary [type=dict_type, input_value='{"model_name": "data_blo..."census_data_by_state"}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+Traceback (most recent call last):
+  File "/home/admin_/semantic_chatbot/app.py", line 109, in <module>
+    for event in agentic_chain.stream(chain_input, config=config, stream_mode="values"):
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2647, in stream
+    for _ in runner.tick(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 162, in tick
+    run_with_retry(
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 657, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/semantic_chatbot/core_logic_langgraph.py", line 146, in run_agent
+    return {"messages": [AIMessage(content="", tool_calls=[{"name": agent_outcome.tool, "args": agent_outcome.tool_input, "id": "1"}])]}
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/messages/ai.py", line 192, in __init__
+    super().__init__(content=content, **kwargs)
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/messages/base.py", line 72, in __init__
+    super().__init__(content=content, **kwargs)
+  File "/home/admin_/.local/lib/python3.12/site-packages/langchain_core/load/serializable.py", line 115, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 253, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AIMessage
+tool_calls.0.args
+  Input should be a valid dictionary [type=dict_type, input_value='{"model_name": "data_blo..."census_data_by_state"}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/dict_type
+During task with name 'agent' and id 'ee956d55-8e09-2f26-5dde-1b9a9b15b066'
